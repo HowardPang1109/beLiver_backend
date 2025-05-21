@@ -2,6 +2,9 @@ import os
 import psycopg2
 from psycopg2 import sql
 from dotenv import load_dotenv
+from datetime import datetime, timedelta
+import random
+import bcrypt
 
 # Load environment variables from .env file
 load_dotenv()
@@ -40,51 +43,102 @@ def get_db_connection():
 
 
 def example_usage(conn):
-    """
-    Demonstrates basic usage: inserting a user and selecting users.
-    """
     if not conn:
         return
 
     try:
         with conn.cursor() as cur:
-            # Example: Insert a new user (ensure to handle potential conflicts with UNIQUE email)
-            # For a real app, you'd hash passwords. This is just a demo.
-            try:
-                cur.execute(
-                    sql.SQL("""
-                        INSERT INTO users (name, email, password, timezone)
-                        VALUES (%s, %s, %s, %s)
-                        ON CONFLICT (email) DO NOTHING;
-                    """),
-                    ("Test User", "test@example.com", "securepassword123", "America/New_York")
-                )
-                conn.commit()
-                if cur.rowcount > 0:
-                    print("Test user inserted (or already existed).")
-                else:
-                    print("Test user with email test@example.com already exists.")
+            # 原始明文密碼
+            plain_password = "pass1234"
 
-            except psycopg2.Error as e:
-                print(f"Error inserting user: {e}")
-                conn.rollback()
+            # 進行 bcrypt 哈希
+            hashed_password = bcrypt.hashpw(plain_password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
 
+            # 插入使用者（使用 hashed_password）
+            cur.execute("""
+                INSERT INTO users (name, email, hashed_password, timezone)
+                VALUES (%s, %s, %s, %s)
+                ON CONFLICT (email) DO NOTHING;
+            """, ("Alice", "alice@example.com", hashed_password, "Asia/Taipei"))
+            conn.commit()
 
-            # Example: Select all users
-            cur.execute(sql.SQL("SELECT id, name, email, timezone FROM users;"))
-            users = cur.fetchall()
-            if users:
-                print("\n--- Users ---")
-                for user_row in users:
-                    print(f"ID: {user_row[0]}, Name: {user_row[1]}, Email: {user_row[2]}, Timezone: {user_row[3]}")
-            else:
-                print("\nNo users found in the database.")
+            # 取得 user_id
+            cur.execute("SELECT id FROM users WHERE email = %s;", ("alice@example.com",))
+            user_id = cur.fetchone()[0]
 
-    except psycopg2.Error as e:
-        print(f"Error during example usage: {e}")
-        conn.rollback()
+            # 插入專案
+            cur.execute("""
+                INSERT INTO projects (name, summary, start_time, end_time, estimated_loading, due_date, user_id)
+                VALUES (%s, %s, %s, %s, %s, %s, %s)
+                RETURNING id;
+            """, (
+                "Productivity App", "A web app to manage tasks", 
+                datetime.now() - timedelta(days=10),
+                datetime.now() + timedelta(days=20),
+                12.5, (datetime.now() + timedelta(days=25)).date(), user_id
+            ))
+            project_id = cur.fetchone()[0]
+            conn.commit()
+
+            # 插入里程碑
+            cur.execute("""
+                INSERT INTO milestones (name, summary, start_time, end_time, estimated_loading, project_id)
+                VALUES (%s, %s, %s, %s, %s, %s)
+                RETURNING id;
+            """, (
+                "Initial Setup", "Setup DB, auth, and backend",
+                datetime.now() - timedelta(days=5),
+                datetime.now() + timedelta(days=5),
+                6.5, project_id
+            ))
+            milestone_id = cur.fetchone()[0]
+            conn.commit()
+
+            # 更新 project.current_milestone_id
+            cur.execute("""
+                UPDATE projects SET current_milestone_id = %s WHERE id = %s;
+            """, (milestone_id, project_id))
+            conn.commit()
+
+            # 插入任務
+            for i in range(3):
+                cur.execute("""
+                    INSERT INTO tasks (title, description, due_date, estimated_loading, milestone_id, is_completed)
+                    VALUES (%s, %s, %s, %s, %s, %s);
+                """, (
+                    f"Task {i+1}",
+                    f"Description for task {i+1}",
+                    (datetime.now() + timedelta(days=random.randint(3, 10))).date(),
+                    round(random.uniform(1.0, 3.5), 1),
+                    milestone_id,
+                    random.choice([True, False])
+                ))
+            conn.commit()
+
+            # 插入檔案
+            cur.execute("""
+                INSERT INTO files (name, url, project_id)
+                VALUES (%s, %s, %s);
+            """, ("design-doc.pdf", "https://example.com/files/design-doc.pdf", project_id))
+            conn.commit()
+
+            # 插入 AI 助理訊息
+            messages = [
+                ("user", "Hey, what's the next deadline?"),
+                ("assistant", "The next task is due in 5 days."),
+                ("user", "Add that to my calendar please."),
+            ]
+            for sender, msg in messages:
+                cur.execute("""
+                    INSERT INTO chat_histories (user_id, project_id, message, sender)
+                    VALUES (%s, %s, %s, %s);
+                """, (user_id, project_id, msg, sender))
+            conn.commit()
+
+            print("✅ 假資料成功插入所有表格！")
+
     except Exception as e:
-        print(f"An unexpected error occurred during example usage: {e}")
+        print(f"Error inserting mock data: {e}")
         conn.rollback()
 
 def main():
@@ -106,13 +160,6 @@ if __name__ == "__main__":
     # Check if .env file exists
     if not os.path.exists(".env"):
         print("Error: .env file not found.")
-        print("Please create a .env file with your database credentials.")
-        print("Example .env content:")
-        print("DB_NAME=your_db_name")
-        print("DB_USER=your_db_user")
-        print("DB_PASSWORD=your_db_password")
-        print("DB_HOST=localhost")
-        print("DB_PORT=5432")
     else:
         # Validate that all required environment variables are set
         required_vars = ["DB_NAME", "DB_USER", "DB_PASSWORD", "DB_HOST", "DB_PORT"]
