@@ -51,22 +51,22 @@ def example_usage(conn):
             # 原始明文密碼
             plain_password = "pass1234"
 
-            # 進行 bcrypt 哈希
+            # bcrypt hash
             hashed_password = bcrypt.hashpw(plain_password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
 
-            # 插入使用者（使用 hashed_password）
+            # 插入使用者
             cur.execute("""
-                INSERT INTO users (name, email, hashed_password, timezone)
-                VALUES (%s, %s, %s, %s)
+                INSERT INTO users (name, email, hashed_password)
+                VALUES (%s, %s, %s)
                 ON CONFLICT (email) DO NOTHING;
-            """, ("Alice", "alice@example.com", hashed_password, "Asia/Taipei"))
+            """, ("Alice", "alice@example.com", hashed_password))
             conn.commit()
 
             # 取得 user_id
             cur.execute("SELECT id FROM users WHERE email = %s;", ("alice@example.com",))
             user_id = cur.fetchone()[0]
 
-            # 插入專案
+            # 插入專案（先不設定 current_milestone）
             cur.execute("""
                 INSERT INTO projects (name, summary, start_time, end_time, estimated_loading, due_date, user_id)
                 VALUES (%s, %s, %s, %s, %s, %s, %s)
@@ -81,12 +81,13 @@ def example_usage(conn):
             conn.commit()
 
             # 插入里程碑
+            milestone_name = "Initial Setup"
             cur.execute("""
                 INSERT INTO milestones (name, summary, start_time, end_time, estimated_loading, project_id)
                 VALUES (%s, %s, %s, %s, %s, %s)
                 RETURNING id;
             """, (
-                "Initial Setup", "Setup DB, auth, and backend",
+                milestone_name, "Setup DB, auth, and backend",
                 datetime.now() - timedelta(days=5),
                 datetime.now() + timedelta(days=5),
                 6.5, project_id
@@ -94,10 +95,10 @@ def example_usage(conn):
             milestone_id = cur.fetchone()[0]
             conn.commit()
 
-            # 更新 project.current_milestone_id
+            # 更新 project.current_milestone 為里程碑名稱
             cur.execute("""
-                UPDATE projects SET current_milestone_id = %s WHERE id = %s;
-            """, (milestone_id, project_id))
+                UPDATE projects SET current_milestone = %s WHERE id = %s;
+            """, (milestone_name, project_id))
             conn.commit()
 
             # 插入任務
@@ -140,6 +141,7 @@ def example_usage(conn):
     except Exception as e:
         print(f"Error inserting mock data: {e}")
         conn.rollback()
+
 
 def main():
     """Main function to connect to the database and perform operations."""

@@ -3,11 +3,10 @@ CREATE TABLE users (
     id SERIAL PRIMARY KEY,
     name VARCHAR(255) NOT NULL,
     email VARCHAR(255) UNIQUE NOT NULL,
-    hashed_password VARCHAR(255) NOT NULL,
-    timezone VARCHAR(50) DEFAULT 'UTC'
+    hashed_password VARCHAR(255) NOT NULL
 );
 
--- 專案表（先不加 current_milestone_id）
+-- 專案表（使用 current_milestone 為文字欄位）
 CREATE TABLE projects (
     id SERIAL PRIMARY KEY,
     name VARCHAR(255) NOT NULL,
@@ -16,6 +15,7 @@ CREATE TABLE projects (
     end_time TIMESTAMP,
     estimated_loading NUMERIC(3,1),  -- 預估時間（小時）
     due_date DATE,
+    current_milestone VARCHAR(255),  -- 改為名稱文字欄位
     user_id INTEGER REFERENCES users(id) ON DELETE CASCADE
 );
 
@@ -29,12 +29,6 @@ CREATE TABLE milestones (
     estimated_loading NUMERIC(3,1),  -- 預估時間（小時）
     project_id INTEGER REFERENCES projects(id) ON DELETE CASCADE
 );
-
--- 回頭加上 current_milestone_id 欄位與外鍵
-ALTER TABLE projects
-ADD COLUMN current_milestone_id INTEGER,
-ADD CONSTRAINT fk_current_milestone
-    FOREIGN KEY (current_milestone_id) REFERENCES milestones(id) ON DELETE SET NULL;
 
 -- 任務表
 CREATE TABLE tasks (
