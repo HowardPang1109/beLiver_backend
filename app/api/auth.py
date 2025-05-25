@@ -11,7 +11,7 @@ from models import User
 
 load_dotenv()
 SECRET_KEY = os.getenv("SECRET_KEY")
-router = APIRouter()
+router = APIRouter(tags=["Auth"])
 security = HTTPBearer()
 
 
