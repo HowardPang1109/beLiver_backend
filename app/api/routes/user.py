@@ -1,7 +1,8 @@
 from fastapi import APIRouter, Depends
-from app.api.routes.auth import get_current_user
+from api.routes.auth import get_current_user
 
-router = APIRouter()
+
+router = APIRouter(tags=["Users"])
 
 @router.get("/user/profile")
 def get_user_profile(current_user = Depends(get_current_user)):

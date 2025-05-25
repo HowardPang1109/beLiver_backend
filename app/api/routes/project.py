@@ -10,7 +10,7 @@ from models import Project as ProjectModel, Milestone as MilestoneModel, Task as
 from schemas.project import *
 
 
-router = APIRouter()
+router = APIRouter(tags=["Tasks"])
 security = HTTPBearer()
 
 def verify_token(credentials: HTTPAuthorizationCredentials = Depends(security)):
