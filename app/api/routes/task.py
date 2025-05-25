@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 from datetime import datetime
 from models import Task, Project, User
 from core.db import get_db
-from api.auth import get_current_user
+from api.routes.auth import get_current_user
 
 router = APIRouter(tags=["Tasks"])
 
