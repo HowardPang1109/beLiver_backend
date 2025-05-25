@@ -1,13 +1,13 @@
 # Fastapi進入點
 from fastapi import FastAPI
-from api.auth import router as auth_router
 from models import Base
 from core.db import engine
-from api.user import router as api_router
+from api.main import router as api_router  # ← 請注意這邊引用的是 app.api.main
 
 app = FastAPI()
-app.include_router(auth_router)
+
 app.include_router(api_router)
+
 
 # 建立資料表
 Base.metadata.create_all(bind=engine)
