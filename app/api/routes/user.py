@@ -3,7 +3,7 @@ from crud.crud_user import get_current_user
 
 router = APIRouter(tags=["Users"])
 
-@router.get("/user/profile")
+@router.get("/users/profile")
 def get_user_profile(current_user = Depends(get_current_user)):
     return {
         "user_id": f"u{current_user.id}",

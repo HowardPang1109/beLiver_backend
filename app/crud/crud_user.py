@@ -3,7 +3,7 @@ import os
 from dotenv import load_dotenv
 from sqlalchemy.orm import Session
 from models import User
-from fastapi import Depends, HTTPException
+from fastapi import HTTPException, Depends
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from jose import JWTError, jwt
 from core.db import get_db

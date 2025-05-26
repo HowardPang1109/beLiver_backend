@@ -1,8 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException
-from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+from fastapi.security import HTTPBearer
 from sqlalchemy.orm import Session
 import os
-from crud.crud_user import get_user_by_email
 from core.db import get_db
 from utils import verify_password, hash_password, create_jwt_token
 from dotenv import load_dotenv
