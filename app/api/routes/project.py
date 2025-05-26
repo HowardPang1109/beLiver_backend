@@ -5,7 +5,7 @@ from typing import List
 from sqlalchemy.exc import SQLAlchemyError
 from fastapi.responses import JSONResponse
 from core.db import get_db 
-from api.routes.auth import get_current_user
+from crud.crud_user import get_current_user
 from schemas.project import *
 from crud.crud_project import *
 from models import User
