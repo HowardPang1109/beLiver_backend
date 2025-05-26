@@ -151,10 +151,10 @@ def main():
     db_conn = None
     try:
         db_conn = get_db_connection()
-        # if db_conn:
+        if db_conn:
 
-        #     # Perform some example operations
-        #     example_usage(db_conn)
+            # Perform some example operations
+            example_usage(db_conn)
 
     finally:
         if db_conn:

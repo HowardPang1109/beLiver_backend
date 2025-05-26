@@ -1,5 +1,5 @@
 # 使用官方 Python 基底映像
-FROM python:3.13-alpine
+FROM python:3.11-slim
 
 # 複製專案檔案
 COPY . .
