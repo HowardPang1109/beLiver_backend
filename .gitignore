@@ -1,4 +1,5 @@
 __pycache__/
 .conda
 .env
+.venv
 fastapi_env/

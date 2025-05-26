@@ -1,5 +1,7 @@
 # beLiver_backend
 
+[📎 GCP 網址](https://beliver-api-579518827316.asia-east1.run.app/)
+
 [DB 說明文件](https://docs.google.com/document/d/1MVfwYKya8sNw13MMvOnkbZTI1VISRFEDar-_8Z5tNM0/edit?usp=sharing)
 
 ## 🚀 專案啟動方式
@@ -95,6 +97,18 @@ SECRET_KEY=your_jwt_secret
 ## 🥐 開啟 Docker
 
 ```bash
+cd app
 docker build -t beliver-api . 
 docker run -p 8080:8080 --env-file .env beliver-api
+```
+
+## 💡 重新部署
+
+```bash
+gcloud run deploy beliver-api \
+  --source . \
+  --region asia-east1 \
+  --allow-unauthenticated \
+  --port 8080 \
+  --update-env-vars DB_NAME=postgres,DB_USER=postgres,DB_PASSWORD=sophieku,DB_HOST=34.80.251.72,DB_PORT=5432,SECRET_KEY=your-own-random-secret-key
 ```
