@@ -6,3 +6,5 @@ uvicorn
 sqlalchemy
 python-jose[cryptography]
 python-multipart
+google-generativeai
+pymupdf
