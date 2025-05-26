@@ -91,3 +91,10 @@ DB_HOST=localhost
 DB_PORT=5432
 SECRET_KEY=your_jwt_secret
 ```
+
+## 🥐 開啟 Docker
+
+```bash
+docker build -t beliver-api . 
+docker run -p 8080:8080 --env-file .env beliver-api
+```

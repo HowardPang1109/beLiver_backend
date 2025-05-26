@@ -1,0 +1,7 @@
+__pycache__/
+fastapi/
+*.pyc
+*.pyo
+*.pyd
+.env
+.env.*
