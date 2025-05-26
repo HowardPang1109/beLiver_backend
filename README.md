@@ -1,5 +1,7 @@
 # beLiver_backend
 
+[📎 GCP 網址](https://beliver-api-579518827316.asia-east1.run.app/)
+
 [DB 說明文件](https://docs.google.com/document/d/1MVfwYKya8sNw13MMvOnkbZTI1VISRFEDar-_8Z5tNM0/edit?usp=sharing)
 
 ## 🚀 專案啟動方式
