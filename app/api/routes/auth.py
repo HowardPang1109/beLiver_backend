@@ -69,7 +69,7 @@ def login_user(payload: dict, db: Session = Depends(get_db)):
     token = create_jwt_token({"sub": user.email})
 
     return {
-        "user_id": f"{user.id}",
+        "user_id": user.id
         "name": user.name,
         "token": token,
         "message": "Login successful",
