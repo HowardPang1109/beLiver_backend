@@ -58,7 +58,7 @@ class MilestoneDetailSchema(BaseModel):
         orm_mode = True
 
 class UpdateProjectRequest(BaseModel):
-    project_id: int
+    project_id: str
     changed_project_summary: str
     changed_name: str
     changed_project_start_time: datetime
@@ -72,8 +72,8 @@ class UpdateProjectResponse(BaseModel):
         orm_mode = True
 
 class UpdateMilestoneRequest(BaseModel):
-    project_id: int
-    milestone_id: int
+    project_id: str
+    milestone_id: str
     changed_milestone_summary: str
     changed_milestone_start_time: datetime
     changed_milestone_end_time: datetime
@@ -86,7 +86,7 @@ class UpdateMilestoneResponse(BaseModel):
         orm_mode = True
 
 class CreateTaskRequest(BaseModel):
-    milestone_id: int
+    milestone_id: str
     ddl: date
     name: str
 
@@ -95,7 +95,7 @@ class CreateTaskResponse(BaseModel):
     task: Dict[str, str | bool | date]
 
 class UpdateTaskRequest(BaseModel):
-    task_id: int
+    task_id: str
     changed_name: str
     changed_ddl: date
 
