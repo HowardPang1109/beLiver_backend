@@ -29,6 +29,15 @@ http://localhost:8000/docs
 }
 ```
 
+```bash
+curl -X POST http://localhost:8000/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{
+    "email": "alice@example.com",
+    "password": "pass1234"
+}'
+```
+
 ### 2. 登入成功後，會回傳：
 
 ```json
