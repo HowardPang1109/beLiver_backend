@@ -11,7 +11,7 @@ from crud.crud_project import *
 from models import User
 
 
-router = APIRouter(tags=["Tasks"])
+router = APIRouter(tags=["Project"])
 security = HTTPBearer()
 
 def verify_token(credentials: HTTPAuthorizationCredentials = Depends(security)):
