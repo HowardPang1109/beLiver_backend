@@ -1,7 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from sqlalchemy.orm import Session
-from jose import JWTError, jwt
 import os
 from crud.crud_user import get_user_by_email
 from core.db import get_db
@@ -13,26 +12,6 @@ load_dotenv()
 SECRET_KEY = os.getenv("SECRET_KEY")
 router = APIRouter(tags=["Auth"])
 security = HTTPBearer()
-
-
-def get_current_user(
-    credentials: HTTPAuthorizationCredentials = Depends(security),
-    db: Session = Depends(get_db)
-):
-    token = credentials.credentials
-    try:
-        payload = jwt.decode(token, SECRET_KEY, algorithms=["HS256"])
-        email = payload.get("sub")
-        if not email:
-            raise HTTPException(status_code=401, detail="Invalid token")
-    except JWTError:
-        raise HTTPException(status_code=401, detail="Invalid token")
-
-    user = get_user_by_email(db, email=email)
-    if user is None:
-        raise HTTPException(status_code=401, detail="User not found")
-
-    return user
 
 
 @router.post("/auth/register")
@@ -70,6 +49,14 @@ def register_user(payload: dict, db: Session = Depends(get_db)):
 
 @router.post("/auth/login")
 def login_user(payload: dict, db: Session = Depends(get_db)):
+    """
+    curl -X POST http://localhost:8000/auth/login \
+    -H "Content-Type: application/json" \
+    -d '{
+        "email": "alice@example.com",
+        "password": "pass1234"
+    }'
+    """
     email = payload.get("email")
     password = payload.get("password")
 

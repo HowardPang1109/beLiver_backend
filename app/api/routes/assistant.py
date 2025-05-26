@@ -4,7 +4,7 @@ from datetime import datetime, timezone
 from pydantic import BaseModel
 from core.db import get_db
 from models import User, Project, ChatHistory, File
-from api.routes.auth import get_current_user
+from crud.crud_user import get_current_user
 
 router = APIRouter(tags=["Assistant"])
 
