@@ -1,8 +1,8 @@
 from fastapi import FastAPI
 from fastapi.openapi.utils import get_openapi
-from models import Base
-from core.db import engine
-from api.main import router as api_router 
+from app.models import Base
+from app.core.db import engine
+from app.api.main import router as api_router 
 
 app = FastAPI()
 

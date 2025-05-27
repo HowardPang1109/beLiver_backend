@@ -4,11 +4,11 @@ from sqlalchemy.orm import Session
 from typing import List
 from sqlalchemy.exc import SQLAlchemyError
 from fastapi.responses import JSONResponse
-from core.db import get_db 
-from crud.crud_user import get_current_user
-from schemas.project import *
-from crud.crud_project import *
-from models import User
+from app.core.db import get_db 
+from app.crud.crud_user import get_current_user
+from app.schemas.project import *
+from app.crud.crud_project import *
+from app.models import User
 
 
 router = APIRouter(tags=["Project"])

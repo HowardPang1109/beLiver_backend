@@ -1,9 +1,9 @@
 from fastapi import APIRouter, HTTPException, Depends, Query, Path, Body
 from sqlalchemy.orm import Session
 from datetime import datetime
-from models import Task, Project, User, Milestone
-from core.db import get_db
-from crud.crud_user import get_current_user
+from app.models import Task, Project, User, Milestone
+from app.core.db import get_db
+from app.crud.crud_user import get_current_user
 
 router = APIRouter(tags=["Tasks"])
 

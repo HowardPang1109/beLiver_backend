@@ -2,9 +2,9 @@ import os
 from fastapi import APIRouter, UploadFile, HTTPException, File, Form, Depends
 from sqlalchemy.orm import Session
 from typing import List, Optional
-from core.db import get_db
-from crud.crud_user import get_current_user
-from models import File as FileModel, Project, User
+from app.core.db import get_db
+from app.crud.crud_user import get_current_user
+from app.models import File as FileModel, Project, User
 
 router = APIRouter(tags=["File"])
 

@@ -9,8 +9,7 @@
 ### 1. 啟動本地伺服器
 
 ```bash
-cd app
-uvicorn main:app --reload
+uvicorn app.main:app --reload
 ```
 
 ### 2. 伺服器啟動後，你可以在瀏覽器開啟：
@@ -97,7 +96,6 @@ SECRET_KEY=your_jwt_secret
 ## 🥐 開啟 Docker
 
 ```bash
-cd app
 docker build -t beliver-api . 
 docker run -p 8080:8080 --env-file .env beliver-api
 ```

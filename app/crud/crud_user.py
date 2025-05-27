@@ -2,11 +2,11 @@
 import os
 from dotenv import load_dotenv
 from sqlalchemy.orm import Session
-from models import User
+from app.models import User
 from fastapi import HTTPException, Depends
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from jose import JWTError, jwt
-from core.db import get_db
+from app.core.db import get_db
 
 
 load_dotenv()
