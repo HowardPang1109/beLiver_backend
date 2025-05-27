@@ -60,6 +60,8 @@ prompt = f"""
 
 以下為 PDF 內容：
 {all_text}
+
+注意：不要有額外說明
 """
 
 
@@ -72,4 +74,3 @@ print(response.text)
 clean_text = response.text.replace("```json", "").replace("```", "")
 
 json_data = json.loads(clean_text)
-print(json_data["projects"])

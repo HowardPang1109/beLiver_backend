@@ -112,3 +112,9 @@ gcloud run deploy beliver-api \
   --port 8080 \
   --update-env-vars DB_NAME=postgres,DB_USER=postgres,DB_PASSWORD=sophieku,DB_HOST=34.80.251.72,DB_PORT=5432,SECRET_KEY=your-own-random-secret-key
 ```
+
+## 測試相關
+
+測試程式碼寫在 ```app/test``` 中
+
+在根目錄中輸入 ```PYTHONPATH=./app pytest``` 就可了
