@@ -145,16 +145,41 @@ def example_usage(conn):
         print(f"❌ Error inserting mock data: {e}")
         conn.rollback()
 
+def select_all_data(conn):
+    """Selects and prints all data from relevant tables."""
+    try:
+        with conn.cursor() as cur:
+            tables = [
+                "users",
+                "projects",
+                "milestones",
+                "tasks",
+                "files",
+                "chat_histories",
+            ]
 
+            for table in tables:
+                print(f"\n📄 {table.upper()} =========================")
+                cur.execute(f"SELECT * FROM {table};")
+                rows = cur.fetchall()
+
+                if rows:
+                    for row in rows:
+                        print(row)
+                else:
+                    print("No data found.")
+
+    except Exception as e:
+        print(f"❌ Error reading data: {e}")
+        
 def main():
     """Main function to connect to the database and perform operations."""
     db_conn = None
     try:
         db_conn = get_db_connection()
         if db_conn:
-
-            # Perform some example operations
-            example_usage(db_conn)
+            # example_usage(db_conn)
+            select_all_data(db_conn)
 
     finally:
         if db_conn:

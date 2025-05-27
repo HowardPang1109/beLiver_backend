@@ -8,3 +8,5 @@ python-jose[cryptography]
 python-multipart
 google-generativeai
 pymupdf
+pytest
+fastapi[all]
