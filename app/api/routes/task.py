@@ -1,7 +1,7 @@
 from fastapi import APIRouter, HTTPException, Depends, Query, Path, Body
 from sqlalchemy.orm import Session
 from datetime import datetime
-from models import Task, Project, User
+from models import Task, Project, User, Milestone
 from core.db import get_db
 from crud.crud_user import get_current_user
 
@@ -20,7 +20,8 @@ def get_tasks_by_date(
     
     tasks = (
         db.query(Task)
-        .join(Project, Task.milestone_id == Project.id) 
+        .join(Milestone, Task.milestone_id == Milestone.id) 
+        .join(Project, Milestone.project_id == Project.id)
         .filter(Project.user_id == current_user.id)
         .filter(Task.due_date == date_obj)
         .all()
@@ -29,12 +30,12 @@ def get_tasks_by_date(
     result = []
     for task in tasks:
         result.append({
-            "task_id": f"task{task.id:03d}",
+            "task_id": task.id,
             "task_title": task.title,
             "description": task.description,
             "estimated_loading": float(task.estimated_loading),
             "isCompleted": task.is_completed,
-            "project_id": f"proj{task.milestone.project_id:02d}" if task.milestone else None
+            "project_id": task.milestone.project_id if task.milestone else None
         })
 
     return result

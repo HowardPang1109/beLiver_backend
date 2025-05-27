@@ -178,7 +178,7 @@ def main():
     try:
         db_conn = get_db_connection()
         if db_conn:
-            # example_usage(db_conn)
+            example_usage(db_conn)
             select_all_data(db_conn)
 
     finally:
