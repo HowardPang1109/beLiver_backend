@@ -54,7 +54,8 @@ def update_task_status(
 
     task = (
         db.query(Task)
-        .join(Project, Task.milestone_id == Project.id)
+        .join(Milestone, Task.milestone_id == Milestone.id) 
+        .join(Project, Milestone.project_id == Project.id)
         .filter(Project.user_id == current_user.id)
         .filter(Task.id == task_id)
         .first()
@@ -68,7 +69,7 @@ def update_task_status(
     db.refresh(task)
 
     return {
-        "task_id": f"task{task.id:03d}",
+        "task_id": task.id,
         "isCompleted": task.is_completed
     }
     
@@ -100,7 +101,7 @@ def get_projects_in_range(
     for p in projects:
         result.append({
             "project_name": p.name,
-            "project_id": f"proj{p.id:02d}",
+            "project_id": p.id,
             "start_time": p.start_time.isoformat(),
             "end_time": p.end_time.isoformat() if p.end_time else None,
         })
