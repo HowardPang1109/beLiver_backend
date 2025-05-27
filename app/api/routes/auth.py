@@ -48,14 +48,6 @@ def register_user(payload: dict, db: Session = Depends(get_db)):
 
 @router.post("/auth/login")
 def login_user(payload: dict, db: Session = Depends(get_db)):
-    """
-    curl -X POST http://localhost:8000/auth/login \
-    -H "Content-Type: application/json" \
-    -d '{
-        "email": "alice@example.com",
-        "password": "pass1234"
-    }'
-    """
     email = payload.get("email")
     password = payload.get("password")
 
