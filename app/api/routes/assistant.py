@@ -24,21 +24,21 @@ def handle_message(
     current_user: User = Depends(get_current_user)
 ):
     try:
-        user_id_int = int(payload.user_id.replace("u", ""))
-        project_id_int = int(payload.project_id.replace("proj", ""))
+        user_id = payload.user_id
+        project_id = payload.project_id
     except:
         raise HTTPException(status_code=400, detail="Invalid user_id or project_id format")
 
-    if current_user.id != user_id_int:
+    if current_user.id != user_id:
         raise HTTPException(status_code=403, detail="User not authorized")
 
-    project = db.query(Project).filter_by(id=project_id_int, user_id=user_id_int).first()
+    project = db.query(Project).filter_by(id=project_id, user_id=user_id).first()
     if not project:
         raise HTTPException(status_code=404, detail="Project not found")
 
     user_message = ChatHistory(
-        user_id=user_id_int,
-        project_id=project_id_int,
+        user_id=user_id,
+        project_id=project_id,
         message=payload.message,
         sender="user",
         timestamp=datetime.now(timezone.utc)
@@ -47,8 +47,8 @@ def handle_message(
 
     reply_text = "Ok, got it. Adjusting your schedule..."
     reply_message = ChatHistory(
-        user_id=user_id_int,
-        project_id=project_id_int,
+        user_id=user_id,
+        project_id=project_id,
         message=reply_text,
         sender="assistant",
         timestamp=datetime.now(timezone.utc)
@@ -68,17 +68,17 @@ def get_project_history(
     db: Session = Depends(get_db)
 ):
     try:
-        project_id_int = int(projectId.replace("proj", ""))
+        project_id = projectId
     except ValueError:
         raise HTTPException(status_code=400, detail="Invalid projectId format")
 
-    project = db.query(Project).filter_by(id=project_id_int, user_id=current_user.id).first()
+    project = db.query(Project).filter_by(id=project_id, user_id=current_user.id).first()
     if not project:
         raise HTTPException(status_code=404, detail="Project not found")
 
     chat_logs = (
         db.query(ChatHistory)
-        .filter_by(project_id=project_id_int, user_id=current_user.id)
+        .filter_by(project_id=project_id, user_id=current_user.id)
         .order_by(ChatHistory.timestamp.asc())
         .all()
     )
@@ -94,7 +94,7 @@ def get_project_history(
 
     files = (
         db.query(File)
-        .filter_by(project_id=project_id_int)
+        .filter_by(project_id=project_id)
         .all()
     )
 
@@ -119,15 +119,15 @@ def reset_assistant_history(
     db: Session = Depends(get_db)
 ):
     try:
-        project_id_int = int(projectId.replace("proj", ""))
+        project_id= projectId
     except ValueError:
         raise HTTPException(status_code=400, detail="Invalid projectId format")
 
-    project = db.query(Project).filter_by(id=project_id_int, user_id=current_user.id).first()
+    project = db.query(Project).filter_by(id=project_id, user_id=current_user.id).first()
     if not project:
         raise HTTPException(status_code=404, detail="Project not found")
 
-    db.query(ChatHistory).filter_by(project_id=project_id_int, user_id=current_user.id).delete()
+    db.query(ChatHistory).filter_by(project_id=project_id, user_id=current_user.id).delete()
 
     # ⚠️ Optional：刪除草稿檔案
     # db.query(File).filter_by(project_id=project_id_int, is_draft=True).delete()

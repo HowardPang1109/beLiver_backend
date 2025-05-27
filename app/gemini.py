@@ -10,7 +10,7 @@ genai.configure(api_key=GEMINI_KEY)
 
 text_model = genai.GenerativeModel(model_name="gemini-1.5-flash") # 使用文字模型即可
 
-doc = fitz.open("example.pdf")
+doc = fitz.open("uploads/example.pdf")
 all_text = ""
 
 # 逐頁提取純文字
