@@ -2,9 +2,9 @@ from fastapi import APIRouter, HTTPException, Query, Depends
 from sqlalchemy.orm import Session
 from datetime import datetime, timezone
 from pydantic import BaseModel
-from core.db import get_db
-from models import User, Project, ChatHistory, File
-from crud.crud_user import get_current_user
+from app.core.db import get_db
+from app.models import User, Project, ChatHistory, File
+from app.crud.crud_user import get_current_user
 
 router = APIRouter(tags=["Assistant"])
 

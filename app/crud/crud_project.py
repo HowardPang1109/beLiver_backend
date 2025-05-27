@@ -1,8 +1,8 @@
 # crud/crud_project.py
 from sqlalchemy.orm import Session
-from schemas.project import *
+from app.schemas.project import *
 from typing import Optional
-from models import Project as ProjectModel, Milestone as MilestoneModel, Task as TaskModel
+from app.models import Project as ProjectModel, Milestone as MilestoneModel, Task as TaskModel
 from fastapi import HTTPException
 
 def get_all_projects_with_progress(db: Session):

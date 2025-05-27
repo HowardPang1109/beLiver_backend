@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Depends
-from crud.crud_user import get_current_user
+from app.crud.crud_user import get_current_user
 
 router = APIRouter(tags=["User"])
 

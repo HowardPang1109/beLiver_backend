@@ -2,10 +2,10 @@ from fastapi import APIRouter, Depends, HTTPException
 from fastapi.security import HTTPBearer
 from sqlalchemy.orm import Session
 import os
-from core.db import get_db
-from utils import verify_password, hash_password, create_jwt_token
+from app.core.db import get_db
+from app.utils import verify_password, hash_password, create_jwt_token
 from dotenv import load_dotenv
-from models import User
+from app.models import User
 
 load_dotenv()
 SECRET_KEY = os.getenv("SECRET_KEY")
