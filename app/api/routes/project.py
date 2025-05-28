@@ -2,6 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from sqlalchemy.orm import Session
 from sqlalchemy.dialects.postgresql import UUID
+import uuid
 from typing import List
 from sqlalchemy.exc import SQLAlchemyError
 from fastapi.responses import JSONResponse
@@ -38,7 +39,7 @@ def get_all_projects(current_user: User = Depends(get_current_user), db: Session
 
 @router.get("/project_detail", response_model=ProjectDetailSchema)
 def get_project_detail(
-    project_id: UUID,
+    project_id: uuid.UUID,
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
@@ -50,8 +51,8 @@ def get_project_detail(
 
 @router.get("/milestone_detail", response_model=MilestoneDetailSchema)
 def get_milestone_detail(
-    project_id: UUID,
-    milestone_id: UUID,
+    project_id: uuid.UUID,
+    milestone_id: uuid.UUID,
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
@@ -81,7 +82,7 @@ def update_milestone_detail(
 
 @router.delete("/project")
 def delete_project(
-    project_id: UUID,
+    project_id: uuid.UUID,
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
@@ -107,7 +108,7 @@ def update_task(
 
 @router.delete("/task")
 def delete_task(
-    task_id: UUID,
+    task_id: uuid.UUID,
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
