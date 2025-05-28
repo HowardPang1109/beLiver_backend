@@ -4,6 +4,8 @@ from datetime import datetime
 from app.models import Task, Project, User, Milestone
 from app.core.db import get_db
 from app.crud.crud_user import get_current_user
+from sqlalchemy.dialects.postgresql import UUID
+
 
 router = APIRouter(tags=["Tasks"])
 
@@ -42,7 +44,7 @@ def get_tasks_by_date(
 
 @router.patch("/tasks/{task_id}")
 def update_task_status(
-    task_id: int = Path(..., description="Task ID"),
+    task_id: UUID = Path(..., description="Task ID"),
     body: dict = Body(...),
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
