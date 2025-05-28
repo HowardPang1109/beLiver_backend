@@ -4,6 +4,8 @@ from app.schemas.project import *
 from typing import Optional
 from app.models import Project as ProjectModel, Milestone as MilestoneModel, Task as TaskModel
 from fastapi import HTTPException
+from sqlalchemy.dialects.postgresql import UUID
+
 
 def get_all_projects_with_progress(db: Session):
     projects = db.query(ProjectModel).all()
@@ -30,7 +32,7 @@ def get_all_projects_with_progress(db: Session):
 
     return result
 
-def get_project_detail_from_db(db: Session, user_id: str, project_id: int) -> Optional[ProjectDetailSchema]:
+def get_project_detail_from_db(db: Session, user_id: str, project_id: UUID) -> Optional[ProjectDetailSchema]:
     project = db.query(ProjectModel).filter(
         ProjectModel.id == project_id,
         ProjectModel.user_id == user_id
@@ -65,7 +67,7 @@ def get_project_detail_from_db(db: Session, user_id: str, project_id: int) -> Op
         milestones=milestone_summaries
     )
 
-def get_milestone_detail_from_db(db: Session, user_id: str, project_id: int, milestone_id: int) -> Optional[MilestoneDetailSchema]:
+def get_milestone_detail_from_db(db: Session, user_id: str, project_id: UUID, milestone_id: UUID) -> Optional[MilestoneDetailSchema]:
     milestone = (
         db.query(MilestoneModel)
         .join(ProjectModel)
@@ -146,7 +148,7 @@ def update_milestone(db: Session, payload: UpdateMilestoneRequest) -> UpdateMile
         }
     )
 
-def delete_project_in_db(db: Session, user_id: str, project_id: int) -> dict:
+def delete_project_in_db(db: Session, user_id: str, project_id: UUID) -> dict:
     project = db.query(ProjectModel).filter(
         ProjectModel.id == project_id,
         ProjectModel.user_id == user_id
@@ -208,7 +210,7 @@ def update_existing_task(db: Session, payload: UpdateTaskRequest) -> UpdateTaskR
         }
     )
 
-def delete_existing_task(db: Session, task_id: int) -> dict:
+def delete_existing_task(db: Session, task_id: UUID) -> dict:
     task = db.query(TaskModel).filter(TaskModel.id == task_id).first()
     if not task:
         raise HTTPException(status_code=404, detail="Task not found")
