@@ -5,6 +5,9 @@ from typing import List, Optional
 from app.core.db import get_db
 from app.crud.crud_user import get_current_user
 from app.models import File as FileModel, Project, User
+from sqlalchemy.dialects.postgresql import UUID
+import uuid
+
 
 router = APIRouter(tags=["File"])
 
@@ -14,21 +17,14 @@ os.makedirs(UPLOAD_DIR, exist_ok=True)
 @router.post("/upload")
 async def upload_files(
     files: List[UploadFile] = File(...),
-    projectId: Optional[str] = Form(None),
+    projectId: Optional[uuid.UUID] = Form(None),
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
     project_db_id = None
 
     if projectId:
-        if not projectId.startswith("proj"):
-            raise HTTPException(status_code=400, detail="Invalid projectId format")
-        try:
-            project_id_int = int(projectId.replace("proj", ""))
-        except ValueError:
-            raise HTTPException(status_code=400, detail="Invalid projectId format")
-
-        project = db.query(Project).filter_by(id=project_id_int, user_id=current_user.id).first()
+        project = db.query(Project).filter_by(id=projectId, user_id=current_user.id).first()
         if not project:
             raise HTTPException(status_code=404, detail="Project not found or not owned by user")
         project_db_id = project.id

@@ -5,6 +5,7 @@ from typing import Optional
 from app.models import Project as ProjectModel, Milestone as MilestoneModel, Task as TaskModel
 from fastapi import HTTPException
 from sqlalchemy.dialects.postgresql import UUID
+import uuid
 
 
 def get_all_projects_with_progress(db: Session):
@@ -32,7 +33,7 @@ def get_all_projects_with_progress(db: Session):
 
     return result
 
-def get_project_detail_from_db(db: Session, user_id: str, project_id: UUID) -> Optional[ProjectDetailSchema]:
+def get_project_detail_from_db(db: Session, user_id: str, project_id: uuid.UUID) -> Optional[ProjectDetailSchema]:
     project = db.query(ProjectModel).filter(
         ProjectModel.id == project_id,
         ProjectModel.user_id == user_id
@@ -67,7 +68,7 @@ def get_project_detail_from_db(db: Session, user_id: str, project_id: UUID) -> O
         milestones=milestone_summaries
     )
 
-def get_milestone_detail_from_db(db: Session, user_id: str, project_id: UUID, milestone_id: UUID) -> Optional[MilestoneDetailSchema]:
+def get_milestone_detail_from_db(db: Session, user_id: str, project_id: uuid.UUID, milestone_id: uuid.UUID) -> Optional[MilestoneDetailSchema]:
     milestone = (
         db.query(MilestoneModel)
         .join(ProjectModel)
@@ -148,7 +149,7 @@ def update_milestone(db: Session, payload: UpdateMilestoneRequest) -> UpdateMile
         }
     )
 
-def delete_project_in_db(db: Session, user_id: str, project_id: UUID) -> dict:
+def delete_project_in_db(db: Session, user_id: str, project_id: uuid.UUID) -> dict:
     project = db.query(ProjectModel).filter(
         ProjectModel.id == project_id,
         ProjectModel.user_id == user_id
@@ -210,7 +211,7 @@ def update_existing_task(db: Session, payload: UpdateTaskRequest) -> UpdateTaskR
         }
     )
 
-def delete_existing_task(db: Session, task_id: UUID) -> dict:
+def delete_existing_task(db: Session, task_id: uuid.UUID) -> dict:
     task = db.query(TaskModel).filter(TaskModel.id == task_id).first()
     if not task:
         raise HTTPException(status_code=404, detail="Task not found")
