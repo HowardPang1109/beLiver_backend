@@ -70,8 +70,6 @@ prompt = f"""
 {all_text}
 """
 
-
-
 # 注意：gemini-1.5-flash 有非常大的上下文窗口，適合處理大量文字
 response = text_model.generate_content(prompt)
 

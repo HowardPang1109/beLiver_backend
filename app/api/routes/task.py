@@ -75,7 +75,53 @@ def update_task_status(
         "task_id": task.id,
         "isCompleted": task.is_completed
     }
-    
+
+
+@router.put("/tasks/{task_id}")
+def update_task(
+    task_id: uuid.UUID = Path(..., description="Task ID"),
+    body: dict = Body(...),
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    task = (
+        db.query(Task)
+        .join(Milestone, Task.milestone_id == Milestone.id)
+        .join(Project, Milestone.project_id == Project.id)
+        .filter(Project.user_id == current_user.id)
+        .filter(Task.id == task_id)
+        .first()
+    )
+
+    if not task:
+        raise HTTPException(status_code=404, detail="Task not found or not authorized")
+
+    updated = False
+    allowed_fields = ["title", "description", "estimated_loading", "due_date"]
+    for field in allowed_fields:
+        if field in body:
+            if field == "due_date":
+                try:
+                    setattr(task, field, datetime.strptime(body[field], "%Y-%m-%d").date())
+                except Exception:
+                    raise HTTPException(status_code=400, detail="Invalid date format for due_date. Use YYYY-MM-DD.")
+            else:
+                setattr(task, field, body[field])
+            updated = True
+
+    if not updated:
+        raise HTTPException(status_code=400, detail="No valid fields to update.")
+
+    db.commit()
+    db.refresh(task)
+
+    return {
+        "status": "success",
+        "task_id": str(task.id),
+        "updated_fields": [field for field in allowed_fields if field in body]
+    }
+
+
 @router.get("/calendar_projects")
 def get_projects_in_range(
     start_date: str = Query(..., description="Start Date: YYYY-MM-DD"),

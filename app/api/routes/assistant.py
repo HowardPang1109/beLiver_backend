@@ -100,16 +100,16 @@ async def preview_message(
 
     # 3. Prompt
     prompt = f"""
-You are a helpful assistant inside a project planning system.
+    You are a helpful assistant inside a project planning system.
 
-Here is the conversation history:
-{history_text}
+    Here is the conversation history:
+    {history_text}
 
-Here are the uploaded documents:
-{file_text or 'None'}
+    Here are the uploaded documents:
+    {file_text or 'None'}
 
-Based on the above, respond to the user meaningfully.
-"""
+    Based on the above, respond to the user meaningfully.
+    """
 
     try:
         model = genai.GenerativeModel("gemini-1.5-flash")
@@ -156,14 +156,14 @@ def create_new_project(
         )
         db.add(chat_obj)
 
-    # Step 3: 寫入檔案記錄（如果有）
-    for f in payload.uploaded_files:
-        file_obj = File(
-            name=f.file_name,
-            url=f.file_url,
-            project_id=payload.project_id
-        )
-        db.add(file_obj)
+    # # Step 3: 寫入檔案記錄（如果有）
+    # for f in payload.uploaded_files:
+    #     file_obj = File(
+    #         name=f.file_name,
+    #         url=f.file_url,
+    #         project_id=payload.project_id
+    #     )
+    #     db.add(file_obj)
 
     db.commit()
 
@@ -172,8 +172,32 @@ def create_new_project(
         "project_id": str(payload.project_id)
     }
 
+
+# ------------------------
+# RESET PROJECT CHAT
+# ------------------------
+
+@router.delete("/assistant/history")
+def reset_assistant_history(
+    projectId: UUID = Query(..., description="Project ID"),
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    project = db.query(Project).filter_by(id=projectId, user_id=current_user.id).first()
+    if not project:
+        raise HTTPException(status_code=404, detail="Project not found")
+
+    db.query(ChatHistory).filter_by(project_id=projectId, user_id=current_user.id).delete()
+    db.commit()
+
+    return {
+        "message": "Assistant history reset successfully",
+        "project_id": str(projectId)
+    }
+
 # ------------------------
 # GET PROJECT DETAILS
+# This will be used in the future, if user can edit project in the chatbot
 # ------------------------
 
 @router.get("/assistant/history")
@@ -216,190 +240,3 @@ def get_project_history(
         "messages": messages,
         "uploaded_files": uploaded_files
     }
-
-# ------------------------
-# RESET PROJECT CHAT
-# ------------------------
-
-@router.delete("/assistant/history")
-def reset_assistant_history(
-    projectId: UUID = Query(..., description="Project ID"),
-    current_user: User = Depends(get_current_user),
-    db: Session = Depends(get_db)
-):
-    project = db.query(Project).filter_by(id=projectId, user_id=current_user.id).first()
-    if not project:
-        raise HTTPException(status_code=404, detail="Project not found")
-
-    db.query(ChatHistory).filter_by(project_id=projectId, user_id=current_user.id).delete()
-    db.commit()
-
-    return {
-        "message": "Assistant history reset successfully",
-        "project_id": str(projectId)
-    }
-
-# from fastapi import APIRouter, HTTPException, Query, Depends
-# from sqlalchemy.orm import Session
-# from datetime import datetime, timezone
-# from pydantic import BaseModel
-# from app.core.db import get_db
-# from app.models import User, Project, ChatHistory, File
-# from app.crud.crud_user import get_current_user
-# from uuid import UUID
-
-# router = APIRouter(tags=["Assistant"])
-
-# class MessageRequest(BaseModel):
-#     user_id: UUID
-#     project_id: UUID
-#     message: str
-#     isNew: bool = True  # 新增這個欄位以辨別是否為草稿狀態
-
-# class MessageResponse(BaseModel):
-#     reply: str
-#     timestamp: str
-
-# @router.post("/assistant/message", response_model=MessageResponse)
-# def handle_message(
-#     payload: MessageRequest,
-#     db: Session = Depends(get_db),
-#     current_user: User = Depends(get_current_user)
-# ):
-#     if current_user.id != payload.user_id:
-#         raise HTTPException(status_code=403, detail="User not authorized")
-
-#     project = db.query(Project).filter_by(id=payload.project_id, user_id=payload.user_id).first()
-#     if not project:
-#         raise HTTPException(status_code=404, detail="Project not found")
-
-#     now = datetime.now(timezone.utc)
-
-#     if payload.isNew:
-#         user_message = ChatHistory(
-#             user_id=payload.user_id,
-#             project_id=payload.project_id,
-#             message=payload.message,
-#             sender="user",
-#             timestamp=now
-#         )
-#         db.add(user_message)
-
-#     reply_text = "Ok, got it. Adjusting your schedule..."
-#     reply_message = ChatHistory(
-#         user_id=payload.user_id,
-#         project_id=payload.project_id,
-#         message=reply_text,
-#         sender="assistant",
-#         timestamp=now
-#     )
-#     db.add(reply_message)
-#     db.commit()
-
-#     return {
-#         "reply": reply_text,
-#         "timestamp": reply_message.timestamp.isoformat()
-#     }
-
-# @router.get("/assistant/messageHistory")
-# def get_message_draft(
-#     projectId: UUID = Query(..., description="Project ID"),
-#     current_user: User = Depends(get_current_user),
-#     db: Session = Depends(get_db)
-# ):
-#     project = db.query(Project).filter_by(id=projectId, user_id=current_user.id).first()
-#     if not project:
-#         raise HTTPException(status_code=404, detail="Project not found")
-
-#     # 撈取最後一筆 user 的訊息作為草稿
-#     draft = (
-#         db.query(ChatHistory)
-#         .filter_by(project_id=projectId, user_id=current_user.id, sender="user")
-#         .order_by(ChatHistory.timestamp.desc())
-#         .first()
-#     )
-
-#     return {
-#         "messageDraft": draft.message if draft else "",
-#         "timestamp": draft.timestamp.isoformat() if draft else None
-#     }
-
-# @router.post("/assistant/newProject")
-# def create_new_project(
-#     name: str = Query(...),
-#     current_user: User = Depends(get_current_user),
-#     db: Session = Depends(get_db)
-# ):
-#     new_project = Project(
-#         name=name,
-#         user_id=current_user.id,
-#         start_time=datetime.now(timezone.utc)
-#     )
-#     db.add(new_project)
-#     db.commit()
-#     db.refresh(new_project)
-
-#     return {
-#         "project_id": new_project.id,
-#         "name": new_project.name
-#     }
-
-# @router.get("/assistant/history")
-# def get_project_history(
-#     projectId: UUID = Query(..., description="Project ID"),
-#     current_user: User = Depends(get_current_user),
-#     db: Session = Depends(get_db)
-# ):
-#     project = db.query(Project).filter_by(id=projectId, user_id=current_user.id).first()
-#     if not project:
-#         raise HTTPException(status_code=404, detail="Project not found")
-
-#     chat_logs = (
-#         db.query(ChatHistory)
-#         .filter_by(project_id=projectId, user_id=current_user.id)
-#         .order_by(ChatHistory.timestamp.asc())
-#         .all()
-#     )
-
-#     messages = [
-#         {
-#             "sender": chat.sender,
-#             "text": chat.message,
-#             "timestamp": chat.timestamp.isoformat()
-#         }
-#         for chat in chat_logs
-#     ]
-
-#     files = db.query(File).filter_by(project_id=projectId).all()
-#     uploaded_files = [
-#         {
-#             "file_url": file.url,
-#             "file_name": file.name
-#         }
-#         for file in files
-#     ]
-
-#     return {
-#         "project_id": str(projectId),
-#         "messages": messages,
-#         "uploaded_files": uploaded_files
-#     }
-
-# @router.delete("/assistant/history")
-# def reset_assistant_history(
-#     projectId: UUID = Query(..., description="Project ID"),
-#     current_user: User = Depends(get_current_user),
-#     db: Session = Depends(get_db)
-# ):
-#     project = db.query(Project).filter_by(id=projectId, user_id=current_user.id).first()
-#     if not project:
-#         raise HTTPException(status_code=404, detail="Project not found")
-
-#     db.query(ChatHistory).filter_by(project_id=projectId, user_id=current_user.id).delete()
-
-#     db.commit()
-
-#     return {
-#         "message": "Assistant history reset successfully",
-#         "project_id": str(projectId)
-#     }
