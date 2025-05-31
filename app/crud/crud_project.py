@@ -98,6 +98,7 @@ def get_milestone_detail_from_db(db: Session, user_id: str, project_id: uuid.UUI
         milestone_name=milestone.name,
         milestone_summary=milestone.summary,
         milestone_start_time=milestone.start_time,
+        milestone_estimated_loading = milestone.estimated_loading,
         milestone_end_time=milestone.end_time,
         tasks=tasks
     )
