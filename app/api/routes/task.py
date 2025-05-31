@@ -32,6 +32,9 @@ def get_tasks_by_date(
 
     result = []
     for task in tasks:
+        if task.estimated_loading == None:
+            task.estimated_loading = 0.0
+
         result.append({
             "task_id": task.id,
             "task_title": task.title,

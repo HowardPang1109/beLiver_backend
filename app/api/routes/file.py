@@ -4,13 +4,14 @@ from sqlalchemy.orm import Session
 from typing import List, Optional
 from app.core.db import get_db
 from app.crud.crud_user import get_current_user
-from app.models import File as FileModel, Project, User
+from app.models import Files as FileModel, Project, User
 from sqlalchemy.dialects.postgresql import UUID
 import uuid
 
 
-router = APIRouter(tags=["File"])
+router = APIRouter(tags=["Files"])
 
+BASE_URL = os.getenv("BASE_URL", "http://localhost:3000")
 UPLOAD_DIR = "uploads"
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 
@@ -42,8 +43,9 @@ async def upload_files(
             project_id=project_db_id
         )
         db.add(db_file)
+        file_url = f"{BASE_URL}/uploads/{file.filename}"
         saved_files.append({
-            "file_url": f"/{UPLOAD_DIR}/{file.filename}",
+            "file_url": file_url,
             "file_name": file.filename
         })
 

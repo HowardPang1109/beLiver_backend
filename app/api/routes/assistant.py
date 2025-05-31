@@ -1,16 +1,18 @@
-from fastapi import APIRouter, HTTPException, Query, Depends
+from fastapi import APIRouter, File, Form, UploadFile, HTTPException, Query, Depends
 import fitz
 from sqlalchemy.orm import Session
 from datetime import datetime, timezone
 from pydantic import BaseModel
 from app.core.db import get_db
-from app.models import User, Project, ChatHistory, File
+from app.models import User, Project, ChatHistory, Files
 from app.crud.crud_user import get_current_user
 from uuid import UUID, uuid4
 from typing import List, Optional
 import google.generativeai as genai
 import os
 from dotenv import load_dotenv
+from app.gemini.summary_pdf import get_gemini_project_draft
+from app.gemini.json_to_markdown import json_to_markdown
 import requests 
 
 router = APIRouter(tags=["Assistant"])
@@ -23,10 +25,6 @@ genai.configure(api_key=os.getenv("GEMINI_KEY"))
 @router.get("/assistant/initProjectId")
 def init_project_id():
     return {"project_id": str(uuid4())}
-
-# ------------------------
-# CREATE PROJECT (FINAL SUBMIT)
-# ------------------------
 
 class ChatItem(BaseModel):
     sender: str
@@ -74,61 +72,26 @@ def extract_text_from_pdf_url(url: str, max_pages: int = 3) -> str:
         return f"[Failed to read PDF: {str(e)}]"
 
 
-@router.post("/assistant/previewMessage", response_model=PreviewMessageResponse)
-async def preview_message(
-    payload: PreviewMessageRequest,
+
+@router.post("/assistant/project_draft")
+async def get_project_draft(
+    file: UploadFile = File(...),
     current_user: User = Depends(get_current_user),
+    # db: Session = Depends(get_db)
 ):
-    if current_user.id != payload.user_id:
-        raise HTTPException(status_code=403, detail="Unauthorized")
-
-    # 1. 組對話
-    history_text = "\n".join(
-        [f"{item.sender.upper()}: {item.message}" for item in payload.chat_history]
-    )
-
-    # 2. 處理 PDF 檔案
-    file_summaries = []
-    for f in payload.uploaded_files:
-        if f.file_name.lower().endswith(".pdf"):
-            content = extract_text_from_pdf_url(f.file_url)
-            file_summaries.append(f"### {f.file_name}\n{content}")
-        else:
-            file_summaries.append(f"{f.file_name} (Non-PDF, not parsed)")
-
-    file_text = "\n\n".join(file_summaries)
-
-    # 3. Prompt
-    prompt = f"""
-    You are a helpful assistant inside a project planning system.
-
-    Here is the conversation history:
-    {history_text}
-
-    Here are the uploaded documents:
-    {file_text or 'None'}
-
-    Based on the above, respond to the user meaningfully.
-    """
-
     try:
-        model = genai.GenerativeModel("gemini-1.5-flash")
-        response = model.generate_content(prompt)
-        reply_text = response.text.strip()
+        content = await file.read()
+        result = get_gemini_project_draft(content)
+        result_markdown = json_to_markdown(result)
+        return {
+            "file_name": file.filename,
+            "projects": result.get("projects") if isinstance(result, dict) else result,
+            "response": result_markdown,
+        }
     except Exception as e:
-        print("❌ Gemini Error Prompt:")
-        print(prompt[:1000])  # 印前面 1000 字
-        print("❌ Gemini Exception:")
-        print(str(e))
-        raise HTTPException(status_code=500, detail=f"Gemini error: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"處理失敗：{str(e)}")
 
-
-    return PreviewMessageResponse(
-        reply=reply_text,
-        timestamp=datetime.utcnow().isoformat()
-    )
-
-
+    
 @router.post("/assistant/newProject")
 def create_new_project(
     payload: FinalizeProjectRequest,
@@ -156,15 +119,6 @@ def create_new_project(
         )
         db.add(chat_obj)
 
-    # # Step 3: 寫入檔案記錄（如果有）
-    # for f in payload.uploaded_files:
-    #     file_obj = File(
-    #         name=f.file_name,
-    #         url=f.file_url,
-    #         project_id=payload.project_id
-    #     )
-    #     db.add(file_obj)
-
     db.commit()
 
     return {
@@ -173,70 +127,128 @@ def create_new_project(
     }
 
 
-# ------------------------
-# RESET PROJECT CHAT
-# ------------------------
 
-@router.delete("/assistant/history")
-def reset_assistant_history(
-    projectId: UUID = Query(..., description="Project ID"),
-    current_user: User = Depends(get_current_user),
-    db: Session = Depends(get_db)
-):
-    project = db.query(Project).filter_by(id=projectId, user_id=current_user.id).first()
-    if not project:
-        raise HTTPException(status_code=404, detail="Project not found")
 
-    db.query(ChatHistory).filter_by(project_id=projectId, user_id=current_user.id).delete()
-    db.commit()
+# Below are the optional API for the future usage
 
-    return {
-        "message": "Assistant history reset successfully",
-        "project_id": str(projectId)
-    }
+# @router.post("/assistant/previewMessage", response_model=PreviewMessageResponse)
+# async def preview_message(
+#     payload: PreviewMessageRequest,
+#     current_user: User = Depends(get_current_user),
+# ):
+#     if current_user.id != payload.user_id:
+#         raise HTTPException(status_code=403, detail="Unauthorized")
 
-# ------------------------
-# GET PROJECT DETAILS
-# This will be used in the future, if user can edit project in the chatbot
-# ------------------------
+#     # 1. 組對話
+#     history_text = "\n".join(
+#         [f"{item.sender.upper()}: {item.message}" for item in payload.chat_history]
+#     )
 
-@router.get("/assistant/history")
-def get_project_history(
-    projectId: UUID = Query(..., description="Project ID"),
-    current_user: User = Depends(get_current_user),
-    db: Session = Depends(get_db)
-):
-    project = db.query(Project).filter_by(id=projectId, user_id=current_user.id).first()
-    if not project:
-        raise HTTPException(status_code=404, detail="Project not found")
+#     # 2. 處理 PDF 檔案
+#     file_summaries = []
+#     for f in payload.uploaded_files:
+#         if f.file_name.lower().endswith(".pdf"):
+#             content = extract_text_from_pdf_url(f.file_url)
+#             file_summaries.append(f"### {f.file_name}\n{content}")
+#         else:
+#             file_summaries.append(f"{f.file_name} (Non-PDF, not parsed)")
 
-    chat_logs = (
-        db.query(ChatHistory)
-        .filter_by(project_id=projectId, user_id=current_user.id)
-        .order_by(ChatHistory.timestamp.asc())
-        .all()
-    )
+#     file_text = "\n\n".join(file_summaries)
 
-    messages = [
-        {
-            "sender": chat.sender,
-            "text": chat.message,
-            "timestamp": chat.timestamp.isoformat()
-        }
-        for chat in chat_logs
-    ]
+#     # 3. Prompt
+#     prompt = f"""
+#     You are a helpful assistant inside a project planning system.
 
-    files = db.query(File).filter_by(project_id=projectId).all()
-    uploaded_files = [
-        {
-            "file_url": file.url,
-            "file_name": file.name
-        }
-        for file in files
-    ]
+#     Here is the conversation history:
+#     {history_text}
 
-    return {
-        "project_id": str(projectId),
-        "messages": messages,
-        "uploaded_files": uploaded_files
-    }
+#     Here are the uploaded documents:
+#     {file_text or 'None'}
+
+#     Based on the above, respond to the user meaningfully.
+#     """
+
+#     try:
+#         model = genai.GenerativeModel("gemini-1.5-flash")
+#         response = model.generate_content(prompt)
+#         reply_text = response.text.strip()
+#     except Exception as e:
+#         print("❌ Gemini Error Prompt:")
+#         print(prompt[:1000])  # 印前面 1000 字
+#         print("❌ Gemini Exception:")
+#         print(str(e))
+#         raise HTTPException(status_code=500, detail=f"Gemini error: {str(e)}")
+
+
+#     return PreviewMessageResponse(
+#         reply=reply_text,
+#         timestamp=datetime.utcnow().isoformat()
+#     )
+
+# # ------------------------
+# # RESET PROJECT CHAT
+# # ------------------------
+
+# @router.delete("/assistant/history")
+# def reset_assistant_history(
+#     projectId: UUID = Query(..., description="Project ID"),
+#     current_user: User = Depends(get_current_user),
+#     db: Session = Depends(get_db)
+# ):
+#     project = db.query(Project).filter_by(id=projectId, user_id=current_user.id).first()
+#     if not project:
+#         raise HTTPException(status_code=404, detail="Project not found")
+
+#     db.query(ChatHistory).filter_by(project_id=projectId, user_id=current_user.id).delete()
+#     db.commit()
+
+#     return {
+#         "message": "Assistant history reset successfully",
+#         "project_id": str(projectId)
+#     }
+
+# # ------------------------
+# # GET PROJECT DETAILS
+# # This will be used in the future, if user can edit project in the chatbot
+# # ------------------------
+
+# @router.get("/assistant/history")
+# def get_project_history(
+#     projectId: UUID = Query(..., description="Project ID"),
+#     current_user: User = Depends(get_current_user),
+#     db: Session = Depends(get_db)
+# ):
+#     project = db.query(Project).filter_by(id=projectId, user_id=current_user.id).first()
+#     if not project:
+#         raise HTTPException(status_code=404, detail="Project not found")
+
+#     chat_logs = (
+#         db.query(ChatHistory)
+#         .filter_by(project_id=projectId, user_id=current_user.id)
+#         .order_by(ChatHistory.timestamp.asc())
+#         .all()
+#     )
+
+#     messages = [
+#         {
+#             "sender": chat.sender,
+#             "text": chat.message,
+#             "timestamp": chat.timestamp.isoformat()
+#         }
+#         for chat in chat_logs
+#     ]
+
+#     files = db.query(Files).filter_by(project_id=projectId).all()
+#     uploaded_files = [
+#         {
+#             "file_url": file.url,
+#             "file_name": file.name
+#         }
+#         for file in files
+#     ]
+
+#     return {
+#         "project_id": str(projectId),
+#         "messages": messages,
+#         "uploaded_files": uploaded_files
+#     }

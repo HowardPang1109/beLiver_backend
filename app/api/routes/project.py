@@ -26,7 +26,7 @@ def verify_token(credentials: HTTPAuthorizationCredentials = Depends(security)):
 @router.get("/projects", response_model=List[ProjectSchema])
 def get_all_projects(current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     try:
-        projects = get_all_projects_with_progress(db)
+        projects = get_all_projects_with_progress(db, current_user)
         if not projects:
             return JSONResponse(status_code=404, content={"detail": "No projects found"})
         return projects
