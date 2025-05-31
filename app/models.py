@@ -3,8 +3,8 @@ from sqlalchemy import Column, String, Text, Date, Boolean, ForeignKey, TIMESTAM
 from sqlalchemy.dialects.postgresql import UUID  # 若你用的是 PostgreSQL
 from sqlalchemy.orm import relationship, declarative_base
 from datetime import datetime
-
-Base = declarative_base()
+from app.core.db import Base
+# Base = declarative_base()
 
 class User(Base):
     __tablename__ = 'users'
