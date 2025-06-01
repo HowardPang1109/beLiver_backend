@@ -33,7 +33,7 @@ class Project(Base):
 
     user = relationship('User', back_populates='projects')
     milestones = relationship('Milestone', back_populates='project', cascade='all, delete-orphan')
-    files = relationship('File', back_populates='project', cascade='all, delete-orphan')
+    files = relationship('Files', back_populates='project', cascade='all, delete-orphan')
     chat_histories = relationship('ChatHistory', back_populates='project', cascade='all, delete-orphan')
 
 
@@ -66,7 +66,7 @@ class Task(Base):
     milestone = relationship('Milestone', back_populates='tasks')
 
 
-class File(Base):
+class Files(Base):
     __tablename__ = 'files'
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)

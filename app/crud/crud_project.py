@@ -4,12 +4,13 @@ from app.schemas.project import *
 from typing import Optional
 from app.models import Project as ProjectModel, Milestone as MilestoneModel, Task as TaskModel
 from fastapi import HTTPException
+from app.models import User
 from sqlalchemy.dialects.postgresql import UUID
 import uuid
 
 
-def get_all_projects_with_progress(db: Session):
-    projects = db.query(ProjectModel).all()
+def get_all_projects_with_progress(db: Session, current_user: User):
+    projects = db.query(ProjectModel).filter(ProjectModel.user_id == current_user.id).all()
     result = []
 
     for project in projects:
@@ -98,6 +99,7 @@ def get_milestone_detail_from_db(db: Session, user_id: str, project_id: uuid.UUI
         milestone_name=milestone.name,
         milestone_summary=milestone.summary,
         milestone_start_time=milestone.start_time,
+        milestone_estimated_loading = milestone.estimated_loading,
         milestone_end_time=milestone.end_time,
         tasks=tasks
     )
@@ -175,6 +177,7 @@ def create_new_task(db: Session, payload: CreateTaskRequest) -> CreateTaskRespon
         title=payload.name,
         due_date=payload.ddl,
         is_completed=False,
+        estimated_loading = 1,
         milestone_id=payload.milestone_id
     )
 
