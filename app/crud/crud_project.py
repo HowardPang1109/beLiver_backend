@@ -22,7 +22,11 @@ def get_all_projects_with_progress(db: Session, current_user: User):
         )
         progress = 0.0
         if milestone and milestone.tasks:
-            progress = sum(task.is_completed for task in milestone.tasks) / len(milestone.tasks)
+            progress = (
+                sum(task.estimated_loading for task in milestone.tasks if task.is_completed)
+                / sum(task.estimated_loading for task in milestone.tasks)
+                if sum(task.estimated_loading for task in milestone.tasks) > 0 else 0.0
+            )
 
         result.append({
             "project_id": str(project.id),
@@ -51,8 +55,12 @@ def get_project_detail_from_db(db: Session, user_id: str, project_id: uuid.UUID)
     for ms in milestones:
         progress = 0.0
         if ms.tasks:
-            progress = sum(task.is_completed for task in ms.tasks) / len(ms.tasks)
-
+            # progress = sum(task.is_completed for task in ms.tasks) / len(ms.tasks)
+            progress = (
+                sum(task.estimated_loading for task in ms.tasks if task.is_completed)
+                / sum(task.estimated_loading for task in ms.tasks)
+                if sum(task.estimated_loading for task in ms.tasks) > 0 else 0.0
+            )
         milestone_summaries.append(MilestoneSummarySchema(
             milestone_id=str(ms.id),
             milestone_name=ms.name,
@@ -181,7 +189,6 @@ def create_new_task(db: Session, payload: CreateTaskRequest) -> CreateTaskRespon
         estimated_loading=payload.estimated_loading,
         description=payload.description,
         is_completed=False,
-        estimated_loading = 1,
         milestone_id=payload.milestone_id
     )
 
