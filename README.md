@@ -29,6 +29,11 @@ http://localhost:8000/docs
   "password": "pass1234"
 }
 ```
+```json
+{
+  "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJhbGljZUBleGFtcGxlLmNvbSJ9.xbSrJiPZkyLp6ieX-ZX1bXg4EAFVSz80rk0QcygxJ4o"
+}
+```
 
 ```bash
 curl -X POST http://localhost:8000/auth/login \
