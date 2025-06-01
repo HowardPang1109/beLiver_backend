@@ -29,6 +29,11 @@ http://localhost:8000/docs
   "password": "pass1234"
 }
 ```
+```json
+{
+  "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJhbGljZUBleGFtcGxlLmNvbSJ9.xbSrJiPZkyLp6ieX-ZX1bXg4EAFVSz80rk0QcygxJ4o"
+}
+```
 
 ```bash
 curl -X POST http://localhost:8000/auth/login \
@@ -115,4 +120,4 @@ gcloud run deploy beliver-api \
 
 測試程式碼寫在 ```app/test``` 中
 
-在根目錄中輸入 ```PYTHONPATH=./app pytest``` 就可了
+在根目錄中輸入 ```PYTHONPATH=. pytest``` 就可以了
