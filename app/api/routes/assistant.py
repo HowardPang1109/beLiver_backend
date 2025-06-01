@@ -110,7 +110,7 @@ def replan_project_api(
     try:
         result_json = replan_project_with_gemini(
             original_json=payload.original_json,
-            chat_history=[item.dict() for item in payload.chat_history]
+            chat_history=[item.model_dump() for item in payload.chat_history]
         )
 
         print("DEBUG Gemini 回傳：", result_json)  # <-- 新增這行幫你看回傳什麼
@@ -121,7 +121,7 @@ def replan_project_api(
         return {
             "updated_json": updated_json,
             "markdown": markdown,
-            "generated_at": datetime.utcnow().isoformat()
+            "generated_at": datetime.now(timezone.utc).isoformat()
         }
 
     except Exception as e:

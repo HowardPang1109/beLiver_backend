@@ -1,8 +1,9 @@
 # crud/crud_project.py
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
+from decimal import Decimal
 from app.schemas.project import *
 from typing import Optional
-from app.models import Project as ProjectModel, Milestone as MilestoneModel, Task as TaskModel
+from app.models import Project as ProjectModel, Milestone as MilestoneModel, Task as TaskModel, ChatHistory as ChatHistoryModel
 from fastapi import HTTPException
 from app.models import User
 from sqlalchemy.dialects.postgresql import UUID
@@ -183,6 +184,7 @@ def create_new_task(db: Session, payload: CreateTaskRequest) -> CreateTaskRespon
     if not milestone:
         raise HTTPException(status_code=404, detail="Milestone not found")
 
+    # Create the new task
     new_task = TaskModel(
         title=payload.name,
         due_date=payload.ddl,
@@ -191,10 +193,37 @@ def create_new_task(db: Session, payload: CreateTaskRequest) -> CreateTaskRespon
         is_completed=False,
         milestone_id=payload.milestone_id
     )
-
     db.add(new_task)
+    
+    # Update milestone's estimated_loading
+    if milestone.tasks:
+        milestone.estimated_loading = sum(
+            Decimal(str(task.estimated_loading or 0)) 
+            for task in milestone.tasks 
+            if task.estimated_loading is not None
+        ) + Decimal(str(new_task.estimated_loading or 0))
+    else:
+        milestone.estimated_loading = Decimal(str(new_task.estimated_loading or 0))
+    
+    # Update project's estimated_loading
+    if milestone.project.milestones:
+        milestone.project.estimated_loading = sum(
+            Decimal(str(m.estimated_loading or 0)) 
+            for m in milestone.project.milestones 
+            if m.estimated_loading is not None
+        )
+    else:
+        milestone.project.estimated_loading = Decimal(str(milestone.estimated_loading or 0))
+    
+    # Add chat history
+    chat_entry = ChatHistoryModel(
+        user_id=milestone.project.user_id,
+        project_id=milestone.project_id,
+        message=f"Created task: {new_task.title} in milestone {milestone.name}",
+        sender="system"
+    )
+    
     db.commit()
-    db.refresh(new_task)
 
     return CreateTaskResponse(
         status="success",
@@ -203,36 +232,139 @@ def create_new_task(db: Session, payload: CreateTaskRequest) -> CreateTaskRespon
             "name": new_task.title,
             "ddl": new_task.due_date,
             "milestone_id": str(new_task.milestone_id),
-            "isCompleted": new_task.is_completed
+            "estimated_loading": float(new_task.estimated_loading) if new_task.estimated_loading else 0.0,
+            "isCompleted": new_task.is_completed,
+            "description": new_task.description or ""
         }
     )
 
 def update_existing_task(db: Session, payload: UpdateTaskRequest) -> UpdateTaskResponse:
-    task = db.query(TaskModel).filter(TaskModel.id == payload.task_id).first()
+    # 加載相關聯的 milestone 和 project 數據
+    task = db.query(TaskModel).options(
+        joinedload(TaskModel.milestone).joinedload(MilestoneModel.project)
+    ).filter(TaskModel.id == payload.task_id).first()
     
     if not task:
         raise HTTPException(status_code=404, detail="Task not found")
 
-    task.title = payload.changed_name
-    task.due_date = payload.changed_ddl
-    task.estimated_loading = payload.changed_estimated_loading
-    task.description = payload.changed_description
+    # 存儲舊值用於日誌
+    old_title = task.title
+    old_loading = task.estimated_loading
+    
+    # 更新任務字段
+    if hasattr(payload, 'changed_name') and payload.changed_name is not None:
+        task.title = payload.changed_name
+    if hasattr(payload, 'changed_ddl') and payload.changed_ddl is not None:
+        task.due_date = payload.changed_ddl
+    if hasattr(payload, 'changed_estimated_loading') and payload.changed_estimated_loading is not None:
+        task.estimated_loading = Decimal(str(payload.changed_estimated_loading))
+    if hasattr(payload, 'changed_description') and payload.changed_description is not None:
+        task.description = payload.changed_description
+    
+    # 更新 milestone 的 estimated_loading
+    if task.milestone:
+        # 重新加載 milestone 以獲取最新的 tasks 集合
+        db.refresh(task.milestone)
+        if task.milestone.tasks:
+            task.milestone.estimated_loading = sum(
+                Decimal(str(t.estimated_loading or 0)) 
+                for t in task.milestone.tasks 
+                if t.estimated_loading is not None
+            )
+    
+    # 更新 project 的 estimated_loading
+    if task.milestone and task.milestone.project:
+        # 重新加載 project 以獲取最新的 milestones 集合
+        db.refresh(task.milestone.project)
+        if task.milestone.project.milestones:
+            task.milestone.project.estimated_loading = sum(
+                Decimal(str(m.estimated_loading or 0))
+                for m in task.milestone.project.milestones
+                if m.estimated_loading is not None
+            )
+    
+    # 添加聊天歷史記錄
+    changes = []
+    if old_title != task.title:
+        changes.append(f"renamed task from '{old_title}' to '{task.title}'")
+    if old_loading != task.estimated_loading:
+        changes.append(f"updated estimated loading from {old_loading} to {task.estimated_loading}")
+    
+    if changes and task.milestone and task.milestone.project:
+        chat_entry = ChatHistoryModel(
+            user_id=task.milestone.project.user_id,
+            project_id=task.milestone.project_id,
+            message=f"Updated task: {', '.join(changes)}",
+            sender="system"
+        )
+        db.add(chat_entry)
+    
     db.commit()
+    db.refresh(task)  # 刷新任務對象以獲取最新狀態
 
     return UpdateTaskResponse(
         status="success",
         updated_fields={
             "changed_name": task.title,
-            "changed_ddl": task.due_date
+            "changed_ddl": task.due_date,
+            "changed_estimated_loading": float(task.estimated_loading) if task.estimated_loading is not None else None,
+            "changed_description": task.description
         }
     )
 
 def delete_existing_task(db: Session, task_id: uuid.UUID) -> dict:
-    task = db.query(TaskModel).filter(TaskModel.id == task_id).first()
+    # 加載任務及其關聯的 milestone 和 project
+    task = db.query(TaskModel).options(
+        joinedload(TaskModel.milestone).joinedload(MilestoneModel.project)
+    ).filter(TaskModel.id == task_id).first()
+    
     if not task:
         raise HTTPException(status_code=404, detail="Task not found")
-
+    
+    # 存儲信息用於日誌
+    task_title = task.title
+    milestone = task.milestone
+    project = milestone.project if milestone else None
+    
+    # 刪除任務
     db.delete(task)
+    
+    # 更新 milestone 的 estimated_loading
+    if milestone:
+        # 重新加載 milestone 以獲取最新的 tasks 集合
+        db.refresh(milestone)
+        if milestone.tasks:
+            milestone.estimated_loading = sum(
+                Decimal(str(t.estimated_loading or 0))
+                for t in milestone.tasks
+                if t.estimated_loading is not None
+            )
+        else:
+            milestone.estimated_loading = Decimal('0')
+    
+    # 更新 project 的 estimated_loading
+    if project:
+        # 重新加載 project 以獲取最新的 milestones 集合
+        db.refresh(project)
+        if project.milestones:
+            project.estimated_loading = sum(
+                Decimal(str(m.estimated_loading or 0))
+                for m in project.milestones
+                if m.estimated_loading is not None
+            )
+        else:
+            project.estimated_loading = Decimal('0')
+    
+    # 添加聊天歷史記錄
+    if project:
+        chat_entry = ChatHistoryModel(
+            user_id=project.user_id,
+            project_id=project.id,
+            message=f"Deleted task: {task_title}",
+            sender="system"
+        )
+        db.add(chat_entry)
+    
     db.commit()
 
     return {

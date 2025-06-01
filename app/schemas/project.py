@@ -97,7 +97,7 @@ class CreateTaskRequest(BaseModel):
 
 class CreateTaskResponse(BaseModel):
     status: str
-    task: Dict[str, str | bool | date]
+    task: Dict[str, str | float | bool | date]
 
 class UpdateTaskRequest(BaseModel):
     task_id: str
@@ -108,4 +108,4 @@ class UpdateTaskRequest(BaseModel):
 
 class UpdateTaskResponse(BaseModel):
     status: str
-    updated_fields: Dict[str, str | date]
+    updated_fields: Dict[str, str | float | bool | date]
