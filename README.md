@@ -112,8 +112,9 @@ gcloud run deploy beliver-api \
   --source . \
   --region asia-east1 \
   --allow-unauthenticated \
+  --memory=2Gi \
   --port 8080 \
-  --update-env-vars DB_NAME=postgres,DB_USER=postgres,DB_PASSWORD=sophieku,DB_HOST=34.80.251.72,DB_PORT=5432,SECRET_KEY=your-own-random-secret-key
+  --update-env-vars DB_NAME=postgres,DB_USER=postgres,DB_PASSWORD=sophieku,DB_HOST=34.80.251.72,DB_PORT=5432,SECRET_KEY=your-own-random-secret-key,GEMINI_KEY=AIzaSyB-Nz_jlUm_fD10Rj408nIQZA19pbcoxC0
 ```
 
 ## 測試相關
