@@ -54,24 +54,6 @@ class PreviewMessageResponse(BaseModel):
     timestamp: str
 
 
-# ---------- Helper: Read first N pages from PDF ----------
-def extract_text_from_pdf_url(url: str, max_pages: int = 3) -> str:
-    try:
-        response = requests.get(url)
-        response.raise_for_status()
-        with open("/tmp/temp.pdf", "wb") as f:
-            f.write(response.content)
-
-        doc = fitz.open("/tmp/temp.pdf")
-        text = ""
-        for page in doc[:max_pages]:
-            text += page.get_text()
-        doc.close()
-        return text.strip()
-    except Exception as e:
-        return f"[Failed to read PDF: {str(e)}]"
-
-
 
 @router.post("/assistant/project_draft")
 async def get_project_draft(
@@ -90,6 +72,9 @@ async def get_project_draft(
         }
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"處理失敗：{str(e)}")
+    
+# 這裡需要一隻可以傳整個聊天記錄進來並回傳新的規劃的 Json 檔加上 markdown 的 APi
+# @router.post()
 
     
 @router.post("/assistant/newProject")
@@ -130,6 +115,23 @@ def create_new_project(
 
 
 # Below are the optional API for the future usage
+
+# ---------- Helper: Read first N pages from PDF ----------
+# def extract_text_from_pdf_url(url: str, max_pages: int = 3) -> str:
+#     try:
+#         response = requests.get(url)
+#         response.raise_for_status()
+#         with open("/tmp/temp.pdf", "wb") as f:
+#             f.write(response.content)
+
+#         doc = fitz.open("/tmp/temp.pdf")
+#         text = ""
+#         for page in doc[:max_pages]:
+#             text += page.get_text()
+#         doc.close()
+#         return text.strip()
+#     except Exception as e:
+#         return f"[Failed to read PDF: {str(e)}]"
 
 # @router.post("/assistant/previewMessage", response_model=PreviewMessageResponse)
 # async def preview_message(
