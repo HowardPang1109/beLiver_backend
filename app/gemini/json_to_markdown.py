@@ -33,11 +33,17 @@ def json_to_markdown(json_data: Dict[Any, Any]) -> str:
         model = configure_gemini()
         
         # Create prompt for Gemini
-        prompt = f"""Please convert the following JSON data into a well-formatted Markdown document.
+        prompt = f"""
+        Please convert the following JSON data into a well-formatted Markdown document.
         Make it readable and properly structured with appropriate headers and sections.
         
         JSON Data:
-        {json_str}"""
+        {json_str}
+
+        # Note:
+        1. Don't add words or explaination that isn't relevent to the JSON data.
+        2. Don't give another translate version in the project summary.
+        """
         
         # Generate response
         response = model.generate_content(prompt)
