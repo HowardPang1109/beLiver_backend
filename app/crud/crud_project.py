@@ -66,6 +66,7 @@ def get_project_detail_from_db(db: Session, user_id: str, project_id: uuid.UUID)
             milestone_id=str(ms.id),
             milestone_name=ms.name,
             ddl=ms.end_time,
+            estimated_loading=float(ms.estimated_loading or 0.0),
             progress=progress
         ))
 

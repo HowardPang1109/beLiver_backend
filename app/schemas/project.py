@@ -19,6 +19,7 @@ class MilestoneSummarySchema(BaseModel):
     milestone_id: str
     milestone_name: str
     ddl: datetime
+    estimated_loading: float
     progress: float
 
     class Config:
