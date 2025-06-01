@@ -12,6 +12,7 @@ class ProjectSchema(BaseModel):
     current_milestone: str
 
     class Config:
+        from_attributes = True
         orm_mode = True
 
 
@@ -46,6 +47,7 @@ class TaskSchema(BaseModel):
     isCompleted: bool
 
     class Config:
+        from_attributes = True
         orm_mode = True
 
 
