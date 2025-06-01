@@ -88,6 +88,8 @@ def get_milestone_detail_from_db(db: Session, user_id: str, project_id: uuid.UUI
             task_name=task.title,
             task_id=str(task.id),
             task_ddl_day=task.due_date,
+            estimated_loading=float(task.estimated_loading or 0.0),
+            description=task.description or "",
             isCompleted=task.is_completed
         )
         for task in milestone.tasks
@@ -175,6 +177,8 @@ def create_new_task(db: Session, payload: CreateTaskRequest) -> CreateTaskRespon
     new_task = TaskModel(
         title=payload.name,
         due_date=payload.ddl,
+        estimated_loading=payload.estimated_loading,
+        description=payload.description,
         is_completed=False,
         milestone_id=payload.milestone_id
     )
@@ -202,6 +206,8 @@ def update_existing_task(db: Session, payload: UpdateTaskRequest) -> UpdateTaskR
 
     task.title = payload.changed_name
     task.due_date = payload.changed_ddl
+    task.estimated_loading = payload.changed_estimated_loading
+    task.description = payload.changed_description
     db.commit()
 
     return UpdateTaskResponse(
