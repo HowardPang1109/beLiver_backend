@@ -13,3 +13,6 @@ fastapi[all]
 pytest-cov
 faiss-cpu 
 entence-transformers
+pytest-cov
+faiss-cpu 
+sentence-transformers 

@@ -83,7 +83,7 @@ def replan_project_api(
     try:
         result_json = replan_project_with_gemini(
             original_json=payload.original_json,
-            chat_history=[item.dict() for item in payload.chat_history]
+            chat_history=[item.model_dump() for item in payload.chat_history]
         )
         updated_json = result_json["updated_json"]
         markdown = json_to_markdown(updated_json)
@@ -91,7 +91,7 @@ def replan_project_api(
         return {
             "updated_json": updated_json,
             "markdown": markdown,
-            "generated_at": datetime.utcnow().isoformat()
+            "generated_at": datetime.now(timezone.utc).isoformat()
         }
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Gemini Replan Error: {str(e)}")
