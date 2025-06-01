@@ -40,6 +40,8 @@ class TaskSchema(BaseModel):
     task_name: str
     task_id: str
     task_ddl_day: date
+    description: str | None = None
+    estimated_loading: float | None = None
     isCompleted: bool
 
     class Config:
@@ -52,6 +54,7 @@ class MilestoneDetailSchema(BaseModel):
     milestone_summary: str
     milestone_start_time: datetime
     milestone_end_time: datetime
+    milestone_estimated_loading: float
     tasks: List[TaskSchema]
 
     class Config:
@@ -89,6 +92,8 @@ class CreateTaskRequest(BaseModel):
     milestone_id: str
     ddl: date
     name: str
+    estimated_loading: float | None = None
+    description: str | None = None
 
 class CreateTaskResponse(BaseModel):
     status: str
@@ -98,6 +103,8 @@ class UpdateTaskRequest(BaseModel):
     task_id: str
     changed_name: str
     changed_ddl: date
+    changed_estimated_loading: float | None = None
+    changed_description: str | None = None
 
 class UpdateTaskResponse(BaseModel):
     status: str
