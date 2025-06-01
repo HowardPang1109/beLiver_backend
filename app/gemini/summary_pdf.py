@@ -77,7 +77,7 @@ def generate_structured_json(context):
       "end_time": "...",
       "due_date": "...",
       "estimated_loading": ...,
-      "current_milestone": "null",
+      "current_milestone": ...,
       "milestones": [
         {{
           "name": "...",
@@ -103,14 +103,16 @@ def generate_structured_json(context):
 請遵守以下規則：
 1. 所有日期與時間欄位（start_time, end_time, due_date）均需填寫，不得為 null。
 2. 所有 estimated_loading 請給出合理整數估算（例如 5, 10, 20），不得為 null。
-3. 每個 Milestone 至少拆解出 3 項具體任務（tasks）。
-4. 任務命名與內容應根據里程碑摘要合理拆解，避免過於模糊或重複。
-5. 每個任務的 due_date 請根據邏輯先後順序與工時推論，合理分配至 milestone 結束日前。
-6. Milestone 的 estimated_loading 不可比底下所有任務的 estimated_loading 總和多超過 10 小時。
-7. estimated_loading 工時估算請依任務類型給予合理範圍，具體如下：
+3. current_milestone 請務必填寫 milestone 陣列裡面第一個 milestone 的 'name'，不得為 null。
+4. 每個 Milestone 至少拆解出 3 項具體任務（tasks）。
+5. 任務命名與內容應根據里程碑摘要合理拆解，避免過於模糊或重複。
+6. 每個任務的 due_date 請根據邏輯先後順序與工時推論，合理分配至 milestone 結束日前。
+7. Milestone 的 estimated_loading 不可比底下所有任務的 estimated_loading 總和多超過 10 小時。
+8. estimated_loading 工時估算請依任務類型給予合理範圍，具體如下：
    - 文書處理類任務（如報告撰寫、資料彙整、會議記錄等）通常介於 5～10 小時
    - 程式開發類任務（如撰寫 API、資料庫設計、前端實作等）通常介於 20～60 小時
-8. 請僅回傳符合格式的純 JSON 結果，不需額外說明或註解。
+9. 請先不要讓 project 的總 estimated_loading 超過 100 小時，最多到 99 小時。
+10. 請僅回傳符合格式的純 JSON 結果，不需額外說明或註解。
 
 以下為內容：
 {context}

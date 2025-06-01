@@ -14,7 +14,7 @@ CREATE TABLE projects (
     summary TEXT,
     start_time TIMESTAMP NOT NULL,
     end_time TIMESTAMP,
-    estimated_loading NUMERIC(3,1),
+    estimated_loading NUMERIC(5,1),
     due_date DATE,
     current_milestone VARCHAR(255),
     user_id UUID REFERENCES users(id) ON DELETE CASCADE
