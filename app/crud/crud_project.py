@@ -22,13 +22,17 @@ def get_all_projects_with_progress(db: Session, current_user: User):
             .first()
         )
         progress = 0.0
-        if milestone and milestone.tasks:
-            progress = (
-                sum(task.estimated_loading for task in milestone.tasks if task.is_completed)
-                / sum(task.estimated_loading for task in milestone.tasks)
-                if sum(task.estimated_loading for task in milestone.tasks) > 0 else 0.0
+        if milestone:
+            total_loading = sum(
+            task.estimated_loading for ms in project.milestones for task in ms.tasks if task.estimated_loading is not None
             )
+            completed_loading = sum(
+            task.estimated_loading for ms in project.milestones for task in ms.tasks if task.is_completed and task.estimated_loading is not None
+            )
+            progress = (completed_loading / total_loading) if total_loading > 0 else 0.0
 
+        # print(project.name)
+        # print(progress)
         result.append({
             "project_id": str(project.id),
             "project_name": project.name,

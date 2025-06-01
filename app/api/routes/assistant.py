@@ -1,4 +1,4 @@
-from fastapi import APIRouter, File, UploadFile, HTTPException, Depends
+from fastapi import APIRouter, File, UploadFile, HTTPException, Depends, Form
 from sqlalchemy.orm import Session
 from datetime import datetime, timezone
 from pydantic import BaseModel
@@ -87,11 +87,13 @@ class ReplanResponse(BaseModel):
 @router.post("/assistant/project_draft")
 async def get_project_draft(
     file: UploadFile = File(...),
+    title: str = Form(...),
+    deadline: datetime = Form(...),
     current_user: User = Depends(get_current_user),
 ):
     try:
         content = await file.read()
-        result = get_gemini_project_draft(content)
+        result = get_gemini_project_draft(content, title=title, deadline=deadline)
         result_markdown = json_to_markdown(result)
         return {
             "file_name": file.filename,
