@@ -87,7 +87,7 @@ def default_serializer(obj):
     
 #     return completed_part_of_project, incomplete_tasks
 
-def reschedule_project(project: Dict[str, Any], new_task: Dict[str, Any]) -> Dict[str, Any]:
+def reschedule_project(project: Dict[str, Any], new_task: Dict[str, Any], new_task_id: str) -> Dict[str, Any]:
     """
     Reschedule project tasks including a new task using Gemini AI.
     
@@ -103,13 +103,16 @@ def reschedule_project(project: Dict[str, Any], new_task: Dict[str, Any]) -> Dic
     prompt = """
 你是一位專業的文件理解助手。你的任務是將一個新的任務插入到專案中。請將新任務依照到期日、預期所需時間插入到new_task裡面的milestone_id的milestone中，並將後面的任務依照新插入的任務調整需要完成的日期。
 
+# 注意：你修改的所有 estimated_loading 都不該是 0
+
 這些是已經完成的專案:
 {project}
 
-這是新的任務:
-{new_task}
+這是新的任務：{new_task}，還有他的 id：{new_task_id}
 
-請遵守以下規則:
+你的任務是給這個任務新的 estimated_loading，請注意 estimated_loading 絕對不是 0，還有要遵守以下的規則：
+
+在把上面這個新任務加入 milestone 的時候，請遵守以下規則:
 1. 所有日期與時間欄位（start_time, end_time, due_date）均需填寫，不得為 null。
 2. 所有 estimated_loading 請給出合理整數估算（例如 5, 10, 20），不得為 null，也不能為0!!!
 3. 每個 Milestone 至少拆解出 3 項具體任務（tasks）。
@@ -119,6 +122,7 @@ def reschedule_project(project: Dict[str, Any], new_task: Dict[str, Any]) -> Dic
 7. estimated_loading 工時估算請依任務類型給予合理範圍，具體如下：
    - 文書處理類任務（如報告撰寫、資料彙整、會議記錄等）通常介於 5～10 小時
    - 程式開發類任務（如撰寫 API、資料庫設計、前端實作等）通常介於 20～60 小時
+   - 如果你不確定的話，請預設是 3 小時
 8. 請依照project的格式回傳，不要做任何格式的修改。
 9. 請不要對任何已經完成的任務做修改，而新任務的到期日也應該在該milestone所有已經完成的任務的到期日後。
 10. 請僅回傳符合格式的純 JSON 結果，不需額外說明或註解。
@@ -133,7 +137,7 @@ def reschedule_project(project: Dict[str, Any], new_task: Dict[str, Any]) -> Dic
       "end_time": "...",
       "due_date": "...",
       "estimated_loading": ...,
-      "current_milestone": "null",
+      "current_milestone": "",
       "milestones": [
         {{
           "name": "...",
@@ -158,9 +162,10 @@ def reschedule_project(project: Dict[str, Any], new_task: Dict[str, Any]) -> Dic
 
 Return only the updated JSON without any additional text or explanation.
 """.format(
-    project=json.dumps(project, indent=2, ensure_ascii=False, default=default_serializer),
-    new_task=json.dumps(new_task.dict(), indent=2, ensure_ascii=False, default=default_serializer)
-)
+      project=json.dumps(project, indent=2, ensure_ascii=False, default=default_serializer),
+      new_task=json.dumps(new_task.dict(), indent=2, ensure_ascii=False, default=default_serializer),
+      new_task_id=new_task_id
+  )
     
     try:
         # Get response from Gemini
@@ -172,8 +177,10 @@ Return only the updated JSON without any additional text or explanation.
             # Remove markdown code block if present
             response_text = response_text.split('```json')[1].split('```')[0].strip()
         
+        # print("what:", response_text)
         # Parse the rescheduled incomplete tasks
         rescheduled_data = json.loads(response_text)
+        # print("reschedule:", rescheduled_data)
         
         return rescheduled_data
     

@@ -30,14 +30,19 @@ def get_tasks_by_date(
         .all()
     )
 
+    
+
     result = []
     for task in tasks:
+        project_name = task.milestone.project.name
+
         if task.estimated_loading == None:
             task.estimated_loading = 0.0
 
         result.append({
             "task_id": task.id,
             "task_title": task.title,
+            "project_name": project_name,
             "description": task.description,
             "estimated_loading": float(task.estimated_loading),
             "isCompleted": task.is_completed,

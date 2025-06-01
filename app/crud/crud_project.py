@@ -183,6 +183,18 @@ def delete_project_in_db(db: Session, user_id: str, project_id: uuid.UUID) -> di
     return {"status": "success", "message": "Project successfully deleted"}
 
 def create_new_task(db: Session, payload: CreateTaskRequest) -> CreateTaskResponse:
+    
+    new_task = TaskModel(
+        title=payload.name,
+        due_date=payload.ddl,
+        estimated_loading=payload.estimated_loading,
+        description=payload.description,
+        is_completed=False,
+        milestone_id=payload.milestone_id
+    )
+    db.add(new_task)
+    db.flush()  # Flush to get the new ID assigned by the database
+    # new_task_id = new_task.id
     # Load milestone with all relationships
     milestone = db.query(MilestoneModel)\
         .options(
@@ -192,6 +204,7 @@ def create_new_task(db: Session, payload: CreateTaskRequest) -> CreateTaskRespon
         )\
         .filter(MilestoneModel.id == payload.milestone_id)\
         .first()
+    
 
     if not milestone:
         raise HTTPException(status_code=404, detail="Milestone not found")
@@ -230,65 +243,61 @@ def create_new_task(db: Session, payload: CreateTaskRequest) -> CreateTaskRespon
             for m in milestone.project.milestones
         ]
     }
-
-    rescheduled_project = reschedule_project(project_data, payload)
+    rescheduled_project = reschedule_project(project_data, payload, new_task.id)
     
+    print("re:", rescheduled_project)
     # Create the new task
-    new_task = TaskModel(
-        title=payload.name,
-        due_date=payload.ddl,
-        estimated_loading=payload.estimated_loading,
-        description=payload.description,
-        is_completed=False,
-        milestone_id=payload.milestone_id
-    )
-    db.add(new_task)
     
     # Update milestone's estimated_loading
     try:
+        print("try")
         # Update all tasks and milestones based on the rescheduled project
-        for milestone_data in rescheduled_project.get('milestones', []):
-            # Find the milestone in the database
-            milestone = db.query(MilestoneModel).filter(
-                MilestoneModel.id == milestone_data['id'],
-                MilestoneModel.project_id == milestone_data['project_id']
-            ).first()
-            
-            if not milestone:
-                continue
-                
-            # Update milestone dates if needed
-            if 'start_time' in milestone_data:
-                milestone.start_time = milestone_data['start_time']
-            if 'end_time' in milestone_data:
-                milestone.end_time = milestone_data['end_time']
-            if 'estimated_loading' in milestone_data:
-                milestone.estimated_loading = Decimal(str(milestone_data['estimated_loading'] or 0))
-                
-            # Update tasks for this milestone
-            for task_data in milestone_data.get('tasks', []):
-                task = db.query(TaskModel).filter(
-                    TaskModel.id == task_data['id'],
-                    TaskModel.milestone_id == milestone.id
+        projects = rescheduled_project.get("projects", [])
+        if projects and isinstance(projects[0], dict):
+            for milestone_data in projects[0].get("milestones", []):
+                # Find the milestone in the database
+                print("milestone data: ", milestone_data)
+                milestone = db.query(MilestoneModel).filter(
+                    MilestoneModel.id == uuid.UUID(milestone_data['id']),
+                    MilestoneModel.project_id == uuid.UUID(milestone_data['project_id'])
                 ).first()
                 
-                if task:
-                    # Update existing task
-                    if 'due_date' in task_data:
-                        task.due_date = task_data['due_date']
-                    if 'estimated_loading' in task_data:
-                        task.estimated_loading = Decimal(str(task_data['estimated_loading'] or 0))
-                    if 'title' in task_data:
-                        task.title = task_data['title']
-                    if 'description' in task_data:
-                        task.description = task_data.get('description', '')
-                    if 'is_completed' in task_data:
-                        task.is_completed = task_data['is_completed']
-                else:
-                    # This should be our new task
-                    if task_data['title'] == payload.name:  # Match by title as a fallback
-                        new_task.due_date = task_data.get('due_date', new_task.due_date)
-                        new_task.estimated_loading = Decimal(str(task_data.get('estimated_loading', 0)))
+                if not milestone:
+                    continue
+                    
+                # Update milestone dates if needed
+                if 'start_time' in milestone_data:
+                    milestone.start_time = milestone_data['start_time']
+                if 'end_time' in milestone_data:
+                    milestone.end_time = milestone_data['end_time']
+                if 'estimated_loading' in milestone_data:
+                    # print("es:", milestone_data['estimated_loading'])
+                    milestone.estimated_loading = Decimal(str(milestone_data['estimated_loading'] or 0))
+                    
+                # Update tasks for this milestone
+                for task_data in milestone_data.get('tasks', []):
+                    task = db.query(TaskModel).filter(
+                        TaskModel.id == task_data['id'],
+                        TaskModel.milestone_id == milestone.id
+                    ).first()
+                    
+                    if task:
+                        # Update existing task
+                        if 'due_date' in task_data:
+                            task.due_date = task_data['due_date']
+                        if 'estimated_loading' in task_data:
+                            task.estimated_loading = Decimal(str(task_data['estimated_loading'] or 0))
+                        if 'title' in task_data:
+                            task.title = task_data['title']
+                        if 'description' in task_data:
+                            task.description = task_data.get('description', '')
+                        if 'is_completed' in task_data:
+                            task.is_completed = task_data['is_completed']
+                    else:
+                        # This should be our new task
+                        if task_data['title'] == payload.name:  # Match by title as a fallback
+                            new_task.due_date = task_data.get('due_date', new_task.due_date)
+                            new_task.estimated_loading = Decimal(str(task_data.get('estimated_loading', 0)))
         
         db.commit()
         return CreateTaskResponse(
@@ -447,7 +456,7 @@ def update_existing_task(db: Session, payload: UpdateTaskRequest) -> UpdateTaskR
     except Exception as e:
         db.rollback()
         raise HTTPException(status_code=500, detail=f"Failed to update task: {str(e)}")
-
+    
 def delete_existing_task(db: Session, task_id: uuid.UUID) -> dict:
     # 加載任務及其關聯的 milestone 和 project
     task = db.query(TaskModel).options(
