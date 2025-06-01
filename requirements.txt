@@ -13,3 +13,4 @@ fastapi[all]
 pytest-cov
 faiss-cpu 
 sentence-transformers
+numpy

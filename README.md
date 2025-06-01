@@ -119,6 +119,6 @@ gcloud run deploy beliver-api \
 
 ## 測試相關
 
-測試程式碼寫在 ```app/test``` 中
+測試程式碼寫在 ```app/test```
 
 在根目錄中輸入 ```PYTHONPATH=. pytest``` 就可以了
