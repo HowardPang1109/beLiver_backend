@@ -172,6 +172,91 @@ def generate_mock_data():
 
     return users, projects, milestones, tasks, files, chat_histories
 
+def generate_mock_data_for_alice():
+    """Generate mock data for Alice with 3 projects, 4 milestones each, 5 tasks per milestone."""
+    users = []
+    projects = []
+    milestones = []
+    tasks = []
+    files = []
+    chat_histories = []
+
+    # Fixed Alice info
+    alice_id = "4caaa385-3a04-4bbc-8fb4-773766f70f59"
+    alice = {
+        "id": alice_id,
+        "name": "Alice",
+        "email": "alice@example.com",
+        "hashed_password": "$2b$12$YXTBScc7xBxw.m6XDQpdoud3K546XvG58p7ZNVlgWH0F/5Nay6OW2"
+    }
+    users.append(alice)
+
+    for p in range(3):  # 3 projects
+        project_id = str(uuid.uuid4())
+        project = {
+            "id": project_id,
+            "name": f"Alice Project {p+1}",
+            "summary": "Project for Alice",
+            "start_time": datetime.now() - timedelta(days=10),
+            "end_time": datetime.now() + timedelta(days=30),
+            "estimated_loading": round(random.uniform(10.0, 25.0), 1),
+            "due_date": (datetime.now() + timedelta(days=40)).date(),
+            "user_id": alice_id,
+            "current_milestone": None
+        }
+        projects.append(project)
+
+        for m in range(4):  # 4 milestones
+            milestone_id = str(uuid.uuid4())
+            milestone_name = f"Alice Milestone {m+1} (Proj{p+1})"
+            milestone = {
+                "id": milestone_id,
+                "name": milestone_name,
+                "summary": "Milestone for Alice",
+                "start_time": datetime.now() - timedelta(days=2),
+                "end_time": datetime.now() + timedelta(days=15),
+                "estimated_loading": round(random.uniform(3.0, 8.0), 1),
+                "project_id": project_id
+            }
+            milestones.append(milestone)
+
+            if m == 0:
+                project["current_milestone"] = milestone_name
+
+            for t in range(5):  # 5 tasks
+                task = {
+                    "id": str(uuid.uuid4()),
+                    "title": f"Alice Task {t+1}",
+                    "description": f"Task {t+1} for Alice milestone {m+1}",
+                    "due_date": (datetime.now() + timedelta(days=random.randint(3, 10))).date(),
+                    "estimated_loading": round(random.uniform(1.0, 3.0), 1),
+                    "milestone_id": milestone_id,
+                    "is_completed": random.choice([True, False])
+                }
+                tasks.append(task)
+
+        # 1 file per project
+        file = {
+            "id": str(uuid.uuid4()),
+            "name": f"AliceFile{p+1}.pdf",
+            "url": "https://example.com/alice_file.pdf",
+            "project_id": project_id
+        }
+        files.append(file)
+
+        # 3 chat messages
+        for sender, msg in [("user", "Any updates?"), ("assistant", "Please complete milestone 1."), ("user", "On it.")]:
+            chat = {
+                "id": str(uuid.uuid4()),
+                "user_id": alice_id,
+                "project_id": project_id,
+                "message": msg,
+                "sender": sender
+            }
+            chat_histories.append(chat)
+
+    return users, projects, milestones, tasks, files, chat_histories
+
 def insert_mock_data(conn, users, projects, milestones, tasks, files, chat_histories):
     try:
         with conn.cursor() as cur:
@@ -237,10 +322,11 @@ def main():
     try:
         db_conn = get_db_connection()
         if db_conn:
-            users, projects, milestones, tasks, files, chat_histories = generate_mock_data()
+            # users, projects, milestones, tasks, files, chat_histories = generate_mock_data()
+            # users, projects, milestones, tasks, files, chat_histories = generate_mock_data_for_alice()
             # print(users, projects, milestones, tasks, files, chat_histories)
-            insert_mock_data(db_conn, users, projects, milestones, tasks, files, chat_histories)
-            # select_all_data(db_conn)
+            # insert_mock_data(db_conn, users, projects, milestones, tasks, files, chat_histories)
+            select_all_data(db_conn)
 
     finally:
         if db_conn:
