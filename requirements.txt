@@ -10,3 +10,6 @@ google-generativeai
 pymupdf
 pytest
 fastapi[all]
+pytest-cov
+faiss-cpu 
+entence-transformers 

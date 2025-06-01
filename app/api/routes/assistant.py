@@ -10,7 +10,7 @@ from typing import List, Optional
 import google.generativeai as genai
 import os
 from dotenv import load_dotenv
-from app.gemini.summary_pdf import get_gemini_project_draft
+from app.gemini.summary_pdf import main
 from app.gemini.json_to_markdown import json_to_markdown
 from app.gemini.replan_project import replan_project_with_gemini
 
@@ -65,7 +65,7 @@ async def get_project_draft(
 ):
     try:
         content = await file.read()
-        result = get_gemini_project_draft(content)
+        result = main(content)
         result_markdown = json_to_markdown(result)
         return {
             "file_name": file.filename,
